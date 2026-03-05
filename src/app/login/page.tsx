@@ -22,7 +22,11 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('אימייל או סיסמה שגויים')
+      if (error.message === 'Email not confirmed') {
+        setError('עליך לאשר את כתובת המייל שלך לפני הכניסה. בדוק את תיבת הדואר ולחץ על הקישור שנשלח אליך בעת ההרשמה.')
+      } else {
+        setError('אימייל או סיסמה שגויים')
+      }
       setLoading(false)
       return
     }
