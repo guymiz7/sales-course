@@ -159,17 +159,17 @@ function EditableField({
     const addLabel = field.addLabel || 'הוסף פריט'
     const maxItems = field.maxItems || 20
 
-    function updateItem(idx: number, subFieldId: string, val: string) {
+    const updateItem = (idx: number, subFieldId: string, val: string) => {
       const next = items.map((item, i) => i === idx ? { ...item, [subFieldId]: val } : item)
       onChange(next)
     }
 
-    function addItem() {
+    const addItem = () => {
       if (items.length >= maxItems) return
       onChange([...items, emptyGroup(field.subFields)])
     }
 
-    function removeItem(idx: number) {
+    const removeItem = (idx: number) => {
       const minItems = field.minItems || 1
       if (items.length <= minItems) return
       onChange(items.filter((_, i) => i !== idx))
