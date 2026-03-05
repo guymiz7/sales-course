@@ -7,9 +7,11 @@ interface NavbarProps {
   userName: string
   role: 'admin' | 'student'
   courseName?: string
+  pendingCount?: number
+  openQuestionsCount?: number
 }
 
-export default function Navbar({ userName, role, courseName }: NavbarProps) {
+export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount }: NavbarProps) {
   const pathname = usePathname()
 
   return (
@@ -23,9 +25,9 @@ export default function Navbar({ userName, role, courseName }: NavbarProps) {
       {/* Center: navigation (admin only) */}
       {role === 'admin' && (
         <nav className="flex items-center gap-1">
-          <NavLink href="/admin" label="שאלות פתוחות" pathname={pathname} />
+          <NavLink href="/admin" label="שאלות פתוחות" pathname={pathname} badge={openQuestionsCount} />
           <NavLink href="/admin/questions" label="כל השאלות" pathname={pathname} />
-          <NavLink href="/admin/pending" label="ממתינים לאישור" pathname={pathname} />
+          <NavLink href="/admin/pending" label="ממתינים לאישור" pathname={pathname} badge={pendingCount} />
           <NavLink href="/admin/courses" label="ניהול קורסים" pathname={pathname} />
           <NavLink href="/admin/students" label="תלמידים" pathname={pathname} />
           <Link
@@ -53,19 +55,24 @@ export default function Navbar({ userName, role, courseName }: NavbarProps) {
   )
 }
 
-function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
+function NavLink({ href, label, pathname, badge }: { href: string; label: string; pathname: string; badge?: number }) {
   const active = pathname === href
   return (
     <Link
       href={href}
       className={clsx(
-        'px-3 py-1.5 rounded-md text-sm transition',
+        'relative px-3 py-1.5 rounded-md text-sm transition inline-flex items-center gap-1.5',
         active
           ? 'bg-indigo-50 text-indigo-700 font-medium'
           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
       )}
     >
       {label}
+      {badge != null && badge > 0 && (
+        <span className="inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full leading-none">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </Link>
   )
 }

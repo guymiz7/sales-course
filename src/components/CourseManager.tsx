@@ -113,6 +113,11 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
     router.refresh()
   }
 
+  async function removePartImage(partId: string) {
+    await supabase.from('parts').update({ image_url: null }).eq('id', partId)
+    router.refresh()
+  }
+
   async function uploadPartImage(partId: string, file: File) {
     const ext = file.name.split('.').pop()
     const path = `part-${partId}/banner.${ext}`
@@ -400,7 +405,16 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                           </button>
                         </div>
                         {part.image_url && (
-                          <img src={part.image_url} alt={part.title} className="w-full rounded mt-1 object-cover max-h-14" />
+                          <div className="relative mt-1">
+                            <img src={part.image_url} alt={part.title} className="w-full rounded object-cover max-h-14" />
+                            <button
+                              onClick={() => removePartImage(part.id)}
+                              className="absolute top-0.5 left-0.5 w-5 h-5 bg-black/50 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-500 transition"
+                              title="הסר תמונה"
+                            >
+                              ×
+                            </button>
+                          </div>
                         )}
                         <label className={`cursor-pointer inline-block mt-0.5 px-1.5 py-0.5 rounded transition ${loading === 'part-image-' + part.id ? 'bg-gray-200 text-gray-400' : 'bg-purple-100 text-purple-600 hover:bg-purple-200'}`}>
                           {loading === 'part-image-' + part.id ? 'מעלה...' : part.image_url ? 'החלף תמונה' : '📷 הוסף תמונה'}
