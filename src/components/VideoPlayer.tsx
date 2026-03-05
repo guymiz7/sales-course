@@ -27,7 +27,7 @@ export default function VideoPlayer({ fileId }: { fileId: string }) {
           onContextMenu={e => e.preventDefault()}
         />
         {/* Block the Google Drive download/open button in top-right corner */}
-        <div className="absolute top-0 right-0 w-12 h-12 z-10" />
+        <div className="absolute top-0 right-0 w-24 h-16 z-10" />
       </div>
       <div className="mt-2 text-right">
         <button
