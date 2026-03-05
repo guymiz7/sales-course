@@ -30,6 +30,8 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
   const [editingLesson, setEditingLesson] = useState<string | null>(null)
   const [editFields, setEditFields] = useState<Partial<Lesson>>({})
   const [newPartTitle, setNewPartTitle] = useState('')
+  const [editingPartId, setEditingPartId] = useState<string | null>(null)
+  const [editingPartTitle, setEditingPartTitle] = useState('')
   const supabase = createClient()
   const router = useRouter()
 
@@ -81,6 +83,14 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
   async function deletePart(partId: string, partTitle: string) {
     if (!window.confirm(`למחוק את החלק "${partTitle}"?\nהשיעורים שלו לא יימחקו אלא יאבדו את השיוך לחלק.`)) return
     await supabase.from('parts').delete().eq('id', partId)
+    router.refresh()
+  }
+
+  async function renamePart(partId: string) {
+    if (!editingPartTitle.trim()) return
+    await supabase.from('parts').update({ title: editingPartTitle.trim() }).eq('id', partId)
+    setEditingPartId(null)
+    setEditingPartTitle('')
     router.refresh()
   }
 
@@ -345,15 +355,38 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
               <p className="text-xs font-semibold text-purple-700 mb-2">חלקים</p>
               <div className="space-y-1 mb-2">
                 {(selectedCourse.parts || []).sort((a, b) => a.number - b.number).map(part => (
-                  <div key={part.id} className="flex items-center justify-between text-xs text-purple-800">
-                    <span>{part.number}. {part.title}</span>
-                    <button
-                      onClick={() => deletePart(part.id, part.title)}
-                      className="text-purple-300 hover:text-red-500 transition p-0.5"
-                      title="מחק חלק"
-                    >
-                      🗑
-                    </button>
+                  <div key={part.id} className="flex items-center gap-1 text-xs text-purple-800">
+                    {editingPartId === part.id ? (
+                      <>
+                        <input
+                          value={editingPartTitle}
+                          onChange={e => setEditingPartTitle(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') renamePart(part.id); if (e.key === 'Escape') setEditingPartId(null) }}
+                          autoFocus
+                          className="flex-1 border border-purple-300 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-purple-400"
+                        />
+                        <button onClick={() => renamePart(part.id)} className="text-purple-600 hover:text-purple-800 font-medium">✓</button>
+                        <button onClick={() => setEditingPartId(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex-1">{part.number}. {part.title}</span>
+                        <button
+                          onClick={() => { setEditingPartId(part.id); setEditingPartTitle(part.title) }}
+                          className="text-purple-300 hover:text-purple-600 transition p-0.5"
+                          title="ערוך שם"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => deletePart(part.id, part.title)}
+                          className="text-purple-300 hover:text-red-500 transition p-0.5"
+                          title="מחק חלק"
+                        >
+                          🗑
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
                 {!selectedCourse.parts?.length && (
