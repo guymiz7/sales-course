@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'קורס מכירות',
-  description: 'פלטפורמת קורס מכירות מקצועי',
+  title: 'תמחור ומכירות עם גיא מיזינסקי',
+  description: 'פלטפורמת קורס תמחור ומכירות עם גיא מיזינסקי',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
