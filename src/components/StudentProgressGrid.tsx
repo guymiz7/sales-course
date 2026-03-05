@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -178,7 +178,8 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                 const viewedCount = cohortLessons.filter(l => viewedSet.has(`${student.user_id}:${l.id}`)).length
 
                 return (
-                  <tr key={student.user_id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <React.Fragment key={student.user_id}>
+                  <tr className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2.5 pr-4">
                       <p className="font-medium text-gray-800">{student.users?.full_name || '—'}</p>
                       <p className="text-xs text-gray-400">{viewedCount}/{cohortLessons.length} שיעורים</p>
@@ -263,6 +264,7 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                       </td>
                     </tr>
                   )}
+                  </React.Fragment>
                 )
               })}
             </tbody>
