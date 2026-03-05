@@ -144,10 +144,14 @@ function FieldEditor({
   field,
   onChange,
   onDelete,
+  onMoveUp,
+  onMoveDown,
 }: {
   field: FormField
   onChange: (f: FormField) => void
   onDelete: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }) {
   const inputClass = 'w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400'
 
@@ -158,6 +162,13 @@ function FieldEditor({
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
       <div className="flex items-start gap-2">
+        {/* Move up/down */}
+        <div className="flex flex-col gap-0.5 shrink-0 mt-1">
+          <button type="button" onClick={onMoveUp} disabled={!onMoveUp}
+            className="text-gray-300 hover:text-gray-600 disabled:opacity-20 text-xs leading-none">▲</button>
+          <button type="button" onClick={onMoveDown} disabled={!onMoveDown}
+            className="text-gray-300 hover:text-gray-600 disabled:opacity-20 text-xs leading-none">▼</button>
+        </div>
         {/* Type badge */}
         <span className="shrink-0 mt-1 text-xs bg-indigo-50 text-indigo-700 rounded px-1.5 py-0.5 font-medium">
           {FIELD_TYPES.find(t => t.value === field.type)?.label}
@@ -292,6 +303,14 @@ function SectionEditor({
     onChange({ ...section, fields: section.fields.filter((_, i) => i !== idx) })
   }
 
+  function moveField(idx: number, dir: 'up' | 'down') {
+    const fields = [...section.fields]
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= fields.length) return;
+    [fields[idx], fields[swapIdx]] = [fields[swapIdx], fields[idx]]
+    onChange({ ...section, fields })
+  }
+
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-2">
@@ -322,6 +341,8 @@ function SectionEditor({
             field={f}
             onChange={updated => updateField(i, updated)}
             onDelete={() => deleteField(i)}
+            onMoveUp={i > 0 ? () => moveField(i, 'up') : undefined}
+            onMoveDown={i < section.fields.length - 1 ? () => moveField(i, 'down') : undefined}
           />
         ))}
       </div>

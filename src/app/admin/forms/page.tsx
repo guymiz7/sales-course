@@ -20,7 +20,6 @@ export default async function AdminFormsPage() {
     countMap.set(r.form_id, (countMap.get(r.form_id) || 0) + 1)
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
 
   return (
     <div>
@@ -51,7 +50,7 @@ export default async function AdminFormsPage() {
                 <div className="space-y-2">
                   {forms.map((form: any) => {
                     const submitted = countMap.get(form.id) || 0
-                    const formUrl = `${baseUrl}/forms/${form.id}`
+                    const formUrl = `/forms/${form.id}`
                     return (
                       <div key={form.id} className="bg-white border border-gray-200 rounded-xl px-5 py-4 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">

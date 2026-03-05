@@ -12,7 +12,8 @@ export default function CopyButton({ text, label = 'העתק', copiedLabel = '�
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
-    navigator.clipboard.writeText(text)
+    const value = text.startsWith('/') ? window.location.origin + text : text
+    navigator.clipboard.writeText(value)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }

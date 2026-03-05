@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import CopyButton from '@/components/CopyButton'
 
 interface Enrollment {
   user_id: string
@@ -46,15 +47,29 @@ interface CohortOption {
   courses: { name: string } | null
 }
 
+interface CourseForm {
+  id: string
+  title: string
+  course_id: string
+}
+
+interface FormResponse {
+  form_id: string
+  user_id: string
+  submitted_at: string | null
+}
+
 interface Props {
   enrollments: Enrollment[]
   lessons: Lesson[]
   lessonViews: LessonView[]
   parts?: Part[]
   allCohorts?: CohortOption[]
+  forms?: CourseForm[]
+  formResponses?: FormResponse[]
 }
 
-export default function StudentProgressGrid({ enrollments, lessons, lessonViews, parts, allCohorts }: Props) {
+export default function StudentProgressGrid({ enrollments, lessons, lessonViews, parts, allCohorts, forms, formResponses }: Props) {
   const supabase = createClient()
   const router = useRouter()
   const [managingUserId, setManagingUserId] = useState<string | null>(null)
@@ -231,7 +246,8 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                   {managingUserId === student.user_id && (
                     <tr className="bg-indigo-50">
                       <td colSpan={cohortLessons.length + 3} className="px-4 py-3">
-                        <div className="flex flex-wrap gap-3 items-start">
+                        <div className="flex flex-wrap gap-6 items-start">
+                          {/* Cohorts */}
                           <div>
                             <p className="text-xs font-semibold text-gray-600 mb-1">מחזורים נוכחיים:</p>
                             <div className="flex flex-wrap gap-1">
@@ -260,6 +276,39 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                                 ))}
                             </select>
                           </div>
+                          {/* Forms */}
+                          {(() => {
+                            const studentCourseIds = new Set(
+                              enrollments.filter(e => e.user_id === student.user_id).map(e => e.cohorts?.course_id).filter(Boolean)
+                            )
+                            const studentForms = (forms || []).filter(f => studentCourseIds.has(f.course_id))
+                            if (studentForms.length === 0) return null
+                            return (
+                              <div>
+                                <p className="text-xs font-semibold text-gray-600 mb-1">טפסים:</p>
+                                <div className="space-y-1">
+                                  {studentForms.map(form => {
+                                    const response = (formResponses || []).find(r => r.form_id === form.id && r.user_id === student.user_id)
+                                    const submitted = !!response?.submitted_at
+                                    return (
+                                      <div key={form.id} className="flex items-center gap-2">
+                                        <span className={`text-xs px-1.5 py-0.5 rounded ${submitted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                          {submitted ? '✓ הוגש' : 'לא הוגש'}
+                                        </span>
+                                        <span className="text-xs text-gray-700 truncate max-w-[140px]">{form.title}</span>
+                                        <CopyButton
+                                          text={`/forms/${form.id}`}
+                                          label="העתק לינק"
+                                          copiedLabel="✓ הועתק"
+                                          className="text-xs text-indigo-600 hover:text-indigo-800 transition"
+                                        />
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          })()}
                         </div>
                       </td>
                     </tr>
