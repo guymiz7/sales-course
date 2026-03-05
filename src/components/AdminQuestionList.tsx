@@ -29,10 +29,11 @@ interface Props {
 
 export default function AdminQuestionList({ questions, currentUserId, showFilters }: Props) {
   const [filter, setFilter] = useState<'all' | 'answered' | 'unanswered'>('all')
+  const [localQuestions, setLocalQuestions] = useState(questions)
   const supabase = createClient()
   const router = useRouter()
 
-  const filtered = questions.filter(q => {
+  const filtered = localQuestions.filter(q => {
     if (filter === 'answered') return q.replies.length > 0
     if (filter === 'unanswered') return q.replies.length === 0
     return true
@@ -41,6 +42,11 @@ export default function AdminQuestionList({ questions, currentUserId, showFilter
   async function handleMarkDone(questionId: string) {
     await supabase.from('questions').update({ is_done: true }).eq('id', questionId)
     router.refresh()
+  }
+
+  async function handleDelete(questionId: string) {
+    setLocalQuestions(prev => prev.filter(q => q.id !== questionId))
+    await supabase.from('questions').delete().eq('id', questionId)
   }
 
   return (
@@ -76,6 +82,7 @@ export default function AdminQuestionList({ questions, currentUserId, showFilter
               currentUserId={currentUserId}
               isAdmin
               onMarkDone={handleMarkDone}
+              onDelete={handleDelete}
             />
           </div>
         ))}

@@ -32,6 +32,7 @@ interface Props {
   currentUserId: string
   isAdmin: boolean
   onMarkDone?: (questionId: string) => Promise<void>
+  onDelete?: (questionId: string) => void
 }
 
 function timeAgo(dateStr: string): string {
@@ -59,7 +60,7 @@ function elapsedBadge(dateStr: string): { label: string; classes: string } {
   return { label, classes }
 }
 
-export default function QuestionCard({ question, currentUserId, isAdmin, onMarkDone }: Props) {
+export default function QuestionCard({ question, currentUserId, isAdmin, onMarkDone, onDelete }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -353,14 +354,24 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
           )}
 
           {/* Action buttons */}
-          {((isOwnQuestion && isDone) || (isAdmin && onMarkDone && !isDone)) && (
-            <div className="px-4 pt-2 pb-0 flex gap-2">
+          {((isOwnQuestion && isDone) || isAdmin) && (
+            <div className="px-4 pt-2 pb-0 flex gap-2 flex-wrap">
               {isAdmin && onMarkDone && !isDone && (
                 <button
                   onClick={() => { setIsDone(true); onMarkDone(question.id) }}
                   className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 bg-white transition hover:bg-gray-50 active:bg-gray-100"
                 >
                   סמן טופל ✓
+                </button>
+              )}
+              {isAdmin && onDelete && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('למחוק את השאלה הזו לצמיתות?')) onDelete(question.id)
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition"
+                >
+                  מחק שאלה 🗑
                 </button>
               )}
               {isOwnQuestion && isDone && (
