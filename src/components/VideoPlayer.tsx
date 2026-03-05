@@ -13,7 +13,6 @@ export default function VideoPlayer({ fileId }: { fileId: string }) {
   }
 
   const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
-  const driveUrl = `https://drive.google.com/file/d/${fileId}/view`
 
   return (
     <div>
@@ -37,21 +36,13 @@ export default function VideoPlayer({ fileId }: { fileId: string }) {
         </button>
         {showHelp && (
           <div className="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-lg text-right">
-            <p className="text-sm text-amber-800 mb-2">
-              הסרטון דורש חשבון Google פעיל. נסה אחת מהאפשרויות:
+            <p className="text-sm text-amber-800 mb-1">
+              הסרטון דורש חשבון Google פעיל.
             </p>
-            <ul className="text-xs text-amber-700 space-y-1 mb-3 list-disc list-inside">
+            <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
               <li>התחבר לחשבון Google שלך בדפדפן</li>
               <li>אם אתה במצב גלישה פרטית — פתח בחלון רגיל</li>
             </ul>
-            <a
-              href={driveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded-md transition font-medium"
-            >
-              פתח סרטון ישירות ב-Google Drive ↗
-            </a>
           </div>
         )}
       </div>
