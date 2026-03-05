@@ -9,21 +9,19 @@ export default async function LessonPage({ params }: { params: { id: string } })
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Get lesson (include course_id for sequential guard)
-  const { data: lesson } = await supabase
-    .from('lessons')
-    .select('id, number, title, google_drive_file_id, description, download_url, course_id')
-    .eq('id', params.id)
-    .single()
+  // Fetch lesson and cohort in parallel
+  const [{ data: lesson }, { data: cohortData }] = await Promise.all([
+    supabase.from('lessons')
+      .select('id, number, title, google_drive_file_id, description, download_url, course_id')
+      .eq('id', params.id)
+      .single(),
+    supabase.from('user_cohorts')
+      .select('cohort_id, access_mode, cohorts(access_mode, courses(access_mode))')
+      .eq('user_id', user.id)
+      .single(),
+  ])
 
   if (!lesson) notFound()
-
-  // Get student's cohort + access mode chain
-  const { data: cohortData } = await supabase
-    .from('user_cohorts')
-    .select('cohort_id, access_mode, cohorts(access_mode, courses(access_mode))')
-    .eq('user_id', user.id)
-    .single()
 
   const cohortId = cohortData?.cohort_id
   const effectiveMode: 'open' | 'sequential' =
@@ -53,24 +51,23 @@ export default async function LessonPage({ params }: { params: { id: string } })
     }
   }
 
-  // Record this lesson as viewed
-  await supabase.from('lesson_views').upsert(
-    { lesson_id: lesson.id, user_id: user.id },
-    { onConflict: 'lesson_id,user_id', ignoreDuplicates: true }
-  )
-
-  // Get questions for this lesson + cohort
-  const { data: questions } = await supabase
-    .from('questions')
-    .select(`
-      id, user_id, content, created_at, is_done, is_private, user_answered, last_reopened_at,
-      users!questions_user_id_fkey(full_name),
-      replies(id, content, created_at, user_id, edited_at, users!replies_user_id_fkey(full_name)),
-      question_reads(user_id)
-    `)
-    .eq('lesson_id', lesson.id)
-    .eq('cohort_id', cohortId || '')
-    .order('created_at', { ascending: false })
+  // Record view and fetch questions in parallel
+  const [, { data: questions }] = await Promise.all([
+    supabase.from('lesson_views').upsert(
+      { lesson_id: lesson.id, user_id: user.id },
+      { onConflict: 'lesson_id,user_id', ignoreDuplicates: true }
+    ),
+    supabase.from('questions')
+      .select(`
+        id, user_id, content, created_at, is_done, is_private, user_answered, last_reopened_at,
+        users!questions_user_id_fkey(full_name),
+        replies(id, content, created_at, user_id, edited_at, users!replies_user_id_fkey(full_name)),
+        question_reads(user_id)
+      `)
+      .eq('lesson_id', lesson.id)
+      .eq('cohort_id', cohortId || '')
+      .order('created_at', { ascending: false }),
+  ])
 
   return (
     <div className="max-w-3xl">
