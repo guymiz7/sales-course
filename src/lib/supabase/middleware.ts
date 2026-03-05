@@ -27,7 +27,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Public routes — no auth needed
-  const publicRoutes = ['/login', '/register', '/auth/callback']
+  const publicRoutes = ['/login', '/register', '/auth/callback', '/auth/update-password']
   if (publicRoutes.some(r => pathname.startsWith(r))) {
     return supabaseResponse
   }
