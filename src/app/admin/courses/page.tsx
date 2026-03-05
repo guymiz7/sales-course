@@ -10,7 +10,7 @@ export default async function CoursesPage() {
       id, name, description, access_mode, image_url,
       cohorts(id, name, start_date, access_mode),
       lessons(id, number, title, google_drive_file_id, description, download_url, cohort_id, homework, part_id),
-      parts(id, number, title)
+      parts(id, number, title, image_url)
     `)
     .order('id')
 

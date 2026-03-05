@@ -7,6 +7,7 @@ interface Part {
   id: string
   number: number
   title: string
+  image_url?: string | null
 }
 
 interface Lesson {
@@ -101,15 +102,24 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
           groups.map((group, gi) => (
             <div key={group.part?.id ?? 'ungrouped'}>
               {group.part && (
-                <div className="flex items-center justify-between px-2 py-1.5 mt-3 mb-0.5">
-                  <span className="text-xs font-semibold text-gray-500">
-                    {group.part.number}. {group.part.title}
-                  </span>
-                  {viewedLessonIds && (
-                    <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
-                      {group.lessons.filter(l => viewedLessonIds.includes(l.id)).length}/{group.lessons.length}
-                    </span>
+                <div className="mt-3 mb-0.5">
+                  {group.part.image_url && (
+                    <img
+                      src={group.part.image_url}
+                      alt={group.part.title}
+                      className="w-full rounded-lg mb-1.5 object-cover max-h-24"
+                    />
                   )}
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <span className="text-xs font-semibold text-gray-500">
+                      {group.part.number}. {group.part.title}
+                    </span>
+                    {viewedLessonIds && (
+                      <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
+                        {group.lessons.filter(l => viewedLessonIds.includes(l.id)).length}/{group.lessons.length}
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
               {group.lessons.length === 0 && group.part && (

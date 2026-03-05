@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-interface Part { id: string; number: number; title: string }
+interface Part { id: string; number: number; title: string; image_url?: string | null }
 interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null; homework: string; part_id: string | null }
 interface Cohort { id: string; name: string; start_date: string; access_mode: string | null }
 interface Course { id: string; name: string; description: string; access_mode: string; image_url: string | null; cohorts: Cohort[]; lessons: Lesson[]; parts: Part[] }
@@ -109,6 +109,18 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
     if (error) { setLoading(''); return }
     const { data } = supabase.storage.from('lesson-files').getPublicUrl(path)
     await supabase.from('courses').update({ image_url: data.publicUrl }).eq('id', selectedCourse.id)
+    setLoading('')
+    router.refresh()
+  }
+
+  async function uploadPartImage(partId: string, file: File) {
+    const ext = file.name.split('.').pop()
+    const path = `part-${partId}/banner.${ext}`
+    setLoading('part-image-' + partId)
+    const { error } = await supabase.storage.from('lesson-files').upload(path, file, { upsert: true })
+    if (error) { setLoading(''); return }
+    const { data } = supabase.storage.from('lesson-files').getPublicUrl(path)
+    await supabase.from('parts').update({ image_url: data.publicUrl }).eq('id', partId)
     setLoading('')
     router.refresh()
   }
@@ -355,9 +367,9 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
               <p className="text-xs font-semibold text-purple-700 mb-2">חלקים</p>
               <div className="space-y-1 mb-2">
                 {(selectedCourse.parts || []).sort((a, b) => a.number - b.number).map(part => (
-                  <div key={part.id} className="flex items-center gap-1 text-xs text-purple-800">
+                  <div key={part.id} className="text-xs text-purple-800">
                     {editingPartId === part.id ? (
-                      <>
+                      <div className="flex items-center gap-1">
                         <input
                           value={editingPartTitle}
                           onChange={e => setEditingPartTitle(e.target.value)}
@@ -367,25 +379,35 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                         />
                         <button onClick={() => renamePart(part.id)} className="text-purple-600 hover:text-purple-800 font-medium">✓</button>
                         <button onClick={() => setEditingPartId(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <span className="flex-1">{part.number}. {part.title}</span>
-                        <button
-                          onClick={() => { setEditingPartId(part.id); setEditingPartTitle(part.title) }}
-                          className="text-purple-300 hover:text-purple-600 transition p-0.5"
-                          title="ערוך שם"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => deletePart(part.id, part.title)}
-                          className="text-purple-300 hover:text-red-500 transition p-0.5"
-                          title="מחק חלק"
-                        >
-                          🗑
-                        </button>
-                      </>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <span className="flex-1">{part.number}. {part.title}</span>
+                          <button
+                            onClick={() => { setEditingPartId(part.id); setEditingPartTitle(part.title) }}
+                            className="text-purple-300 hover:text-purple-600 transition p-0.5"
+                            title="ערוך שם"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => deletePart(part.id, part.title)}
+                            className="text-purple-300 hover:text-red-500 transition p-0.5"
+                            title="מחק חלק"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                        {part.image_url && (
+                          <img src={part.image_url} alt={part.title} className="w-full rounded mt-1 object-cover max-h-14" />
+                        )}
+                        <label className={`cursor-pointer inline-block mt-0.5 px-1.5 py-0.5 rounded transition ${loading === 'part-image-' + part.id ? 'bg-gray-200 text-gray-400' : 'bg-purple-100 text-purple-600 hover:bg-purple-200'}`}>
+                          {loading === 'part-image-' + part.id ? 'מעלה...' : part.image_url ? 'החלף תמונה' : '📷 הוסף תמונה'}
+                          <input type="file" accept="image/*" className="hidden" disabled={loading === 'part-image-' + part.id}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadPartImage(part.id, f) }} />
+                        </label>
+                      </div>
                     )}
                   </div>
                 ))}

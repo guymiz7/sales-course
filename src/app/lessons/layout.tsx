@@ -42,7 +42,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
           .order('number')
       : Promise.resolve({ data: [] as any[] }),
     courseId
-      ? supabase.from('parts').select('id, number, title').eq('course_id', courseId).order('number')
+      ? supabase.from('parts').select('id, number, title, image_url').eq('course_id', courseId).order('number')
       : Promise.resolve({ data: [] as any[] }),
   ])
   const viewedLessonIds = (views || []).map(v => v.lesson_id as string)
