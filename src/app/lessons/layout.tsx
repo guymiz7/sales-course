@@ -30,8 +30,8 @@ export default async function LessonsLayout({ children }: { children: React.Reac
     (cohortData?.cohorts as any)?.courses?.access_mode ||
     'open'
 
-  // Fetch views, lessons, and parts in parallel
-  const [{ data: views }, { data: lessons }, { data: parts }] = await Promise.all([
+  // Fetch views, lessons, parts, and forms in parallel
+  const [{ data: views }, { data: lessons }, { data: parts }, { data: forms }, { data: submittedResponses }] = await Promise.all([
     supabase.from('lesson_views').select('lesson_id').eq('user_id', user.id),
     courseId
       ? supabase.from('lessons').select('id, number, title, part_id')
@@ -44,8 +44,15 @@ export default async function LessonsLayout({ children }: { children: React.Reac
     courseId
       ? supabase.from('parts').select('id, number, title, image_url').eq('course_id', courseId).order('number')
       : Promise.resolve({ data: [] as any[] }),
+    courseId
+      ? supabase.from('forms').select('id, title, order_num').eq('course_id', courseId).eq('is_active', true).order('order_num')
+      : Promise.resolve({ data: [] as any[] }),
+    courseId
+      ? supabase.from('form_responses').select('form_id').eq('user_id', user.id).not('submitted_at', 'is', null)
+      : Promise.resolve({ data: [] as any[] }),
   ])
   const viewedLessonIds = (views || []).map(v => v.lesson_id as string)
+  const submittedFormIds = (submittedResponses || []).map(r => r.form_id as string)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,6 +63,8 @@ export default async function LessonsLayout({ children }: { children: React.Reac
           parts={parts || []}
           viewedLessonIds={viewedLessonIds}
           accessMode={effectiveMode}
+          forms={forms || []}
+          submittedFormIds={submittedFormIds}
         />
         <main className="flex-1 p-4 md:p-6 min-w-0">{children}</main>
       </div>

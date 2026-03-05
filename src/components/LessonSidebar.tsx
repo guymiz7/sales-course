@@ -18,15 +18,22 @@ interface Lesson {
   part_id?: string | null
 }
 
+interface SidebarForm {
+  id: string
+  title: string
+}
+
 interface Props {
   lessons: Lesson[]
   parts?: Part[]
   previewMode?: boolean
   viewedLessonIds?: string[]
   accessMode?: 'open' | 'sequential'
+  forms?: SidebarForm[]
+  submittedFormIds?: string[]
 }
 
-export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode }: Props) {
+export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds }: Props) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
@@ -172,6 +179,34 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
             </span>
             <span>כל השאלות</span>
           </Link>
+        </div>
+      )}
+
+      {/* Forms section */}
+      {!previewMode && forms && forms.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 px-2">טפסים</p>
+          {forms.map(form => {
+            const submitted = submittedFormIds?.includes(form.id)
+            const href = `/forms/${form.id}`
+            return (
+              <Link
+                key={form.id}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition text-gray-700 hover:bg-gray-50"
+              >
+                <span className={clsx(
+                  'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
+                  submitted ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
+                )}>
+                  {submitted ? '✓' : '📋'}
+                </span>
+                <span className="truncate flex-1">{form.title}</span>
+                {submitted && <span className="text-xs text-green-500 shrink-0">הוגש</span>}
+              </Link>
+            )
+          })}
         </div>
       )}
     </>
