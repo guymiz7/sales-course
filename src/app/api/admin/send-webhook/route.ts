@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
       lesson_title: (question.lessons as any)
         ? `שיעור ${(question.lessons as any).number} — ${(question.lessons as any).title}`
         : '',
-      api_key: settings.api_key,
       reply_url: `${baseUrl}/api/admin/reply`,
     }
   } else if (type === 'pending_user') {
@@ -51,7 +50,6 @@ export async function POST(req: NextRequest) {
       id: user.id,
       full_name: user.full_name,
       email: user.email,
-      api_key: settings.api_key,
       approve_url: `${baseUrl}/api/admin/approve`,
     }
   } else {

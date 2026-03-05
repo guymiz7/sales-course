@@ -90,7 +90,6 @@ export default function AdminSettingsForm({ webhookUrl, apiKey }: Props) {
               content: "תוכן השאלה",
               student_name: "שם התלמיד",
               lesson_title: "שיעור 3 — כותרת",
-              api_key: apiKey,
               reply_url: `${baseUrl}/api/admin/reply`
             }, null, 2)}</pre>
           </div>
@@ -101,7 +100,6 @@ export default function AdminSettingsForm({ webhookUrl, apiKey }: Props) {
               id: "uuid",
               full_name: "שם התלמיד",
               email: "email@example.com",
-              api_key: apiKey,
               approve_url: `${baseUrl}/api/admin/approve`
             }, null, 2)}</pre>
           </div>
