@@ -7,7 +7,7 @@ export default async function CoursesPage() {
   const { data: courses } = await supabase
     .from('courses')
     .select(`
-      id, name, description, access_mode,
+      id, name, description, access_mode, image_url,
       cohorts(id, name, start_date, access_mode),
       lessons(id, number, title, google_drive_file_id, description, download_url, cohort_id, homework)
     `)

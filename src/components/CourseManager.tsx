@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null; homework: string }
 interface Cohort { id: string; name: string; start_date: string; access_mode: string | null }
-interface Course { id: string; name: string; description: string; access_mode: string; cohorts: Cohort[]; lessons: Lesson[] }
+interface Course { id: string; name: string; description: string; access_mode: string; image_url: string | null; cohorts: Cohort[]; lessons: Lesson[] }
 
 function extractDriveId(input: string): string {
   const match = input.match(/\/d\/([a-zA-Z0-9_-]+)/)
@@ -69,6 +69,19 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
   async function setCourseAccessMode(mode: 'open' | 'sequential') {
     if (!selectedCourse) return
     await supabase.from('courses').update({ access_mode: mode }).eq('id', selectedCourse.id)
+    router.refresh()
+  }
+
+  async function uploadCourseImage(file: File) {
+    if (!selectedCourse) return
+    const ext = file.name.split('.').pop()
+    const path = `course-${selectedCourse.id}/banner.${ext}`
+    setLoading('course-image')
+    const { error } = await supabase.storage.from('lesson-files').upload(path, file, { upsert: true })
+    if (error) { setLoading(''); return }
+    const { data } = supabase.storage.from('lesson-files').getPublicUrl(path)
+    await supabase.from('courses').update({ image_url: data.publicUrl }).eq('id', selectedCourse.id)
+    setLoading('')
     router.refresh()
   }
 
@@ -188,9 +201,9 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
           ))}
         </div>
 
-        {/* Course access mode */}
+        {/* Course access mode + image */}
         {selectedCourse && (
-          <div className="mb-4 px-1">
+          <div className="mb-4 px-1 space-y-2">
             <p className="text-xs text-gray-500 mb-1.5">גישה לשיעורים — {selectedCourse.name}</p>
             <div className="flex gap-1">
               {(['open', 'sequential'] as const).map(m => (
@@ -206,6 +219,18 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                   {m === 'open' ? 'פתוח' : 'רצף'}
                 </button>
               ))}
+            </div>
+            {/* Course banner image */}
+            <div>
+              <p className="text-xs text-gray-500 mb-1">תמונת נושא לקורס</p>
+              {selectedCourse.image_url && (
+                <img src={selectedCourse.image_url} alt="banner" className="w-full rounded mb-1 object-cover max-h-20" />
+              )}
+              <label className={`cursor-pointer inline-block text-xs px-2 py-1 rounded transition ${loading === 'course-image' ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                {loading === 'course-image' ? 'מעלה...' : selectedCourse.image_url ? 'החלף תמונה' : 'העלה תמונה'}
+                <input type="file" accept="image/*" className="hidden" disabled={loading === 'course-image'}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadCourseImage(f) }} />
+              </label>
             </div>
           </div>
         )}
