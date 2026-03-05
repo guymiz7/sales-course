@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
           {unanswered.length} שאלות ממתינות לתשובה
         </p>
       </div>
-      <AdminQuestionList questions={unanswered} currentUserId={user!.id} />
+      <AdminQuestionList questions={unanswered as any} currentUserId={user!.id} />
     </div>
   )
 }

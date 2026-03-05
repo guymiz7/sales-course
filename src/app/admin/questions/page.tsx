@@ -25,7 +25,7 @@ export default async function AllQuestionsPage() {
           {questions?.length || 0} שאלות סה"כ
         </p>
       </div>
-      <AdminQuestionList questions={questions || []} currentUserId={user!.id} showFilters />
+      <AdminQuestionList questions={(questions || []) as any} currentUserId={user!.id} showFilters />
     </div>
   )
 }
