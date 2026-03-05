@@ -17,12 +17,20 @@ interface Enrollment {
   } | null
 }
 
+interface Part {
+  id: string
+  number: number
+  title: string
+  course_id: string
+}
+
 interface Lesson {
   id: string
   number: number
   title: string
   course_id: string
   cohort_id: string | null
+  part_id?: string | null
 }
 
 interface LessonView {
@@ -35,9 +43,10 @@ interface Props {
   enrollments: Enrollment[]
   lessons: Lesson[]
   lessonViews: LessonView[]
+  parts?: Part[]
 }
 
-export default function StudentProgressGrid({ enrollments, lessons, lessonViews }: Props) {
+export default function StudentProgressGrid({ enrollments, lessons, lessonViews, parts }: Props) {
   const supabase = createClient()
   const router = useRouter()
 
@@ -58,6 +67,19 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews 
 
   const viewedSet = new Set(lessonViews.map(v => `${v.user_id}:${v.lesson_id}`))
   const watchMap = new Map(lessonViews.map(v => [`${v.user_id}:${v.lesson_id}`, v.watch_seconds || 0]))
+
+  // Build part groups for the table header
+  const courseParts = (parts || [])
+    .filter(p => p.course_id === cohortCourseId)
+    .sort((a, b) => a.number - b.number)
+  const partMap = new Map(courseParts.map(p => [p.id, p]))
+  const partGroups: { part: Part | null; lessons: Lesson[] }[] = courseParts.map(part => ({
+    part,
+    lessons: cohortLessons.filter(l => l.part_id === part.id),
+  }))
+  const ungroupedLessons = cohortLessons.filter(l => !l.part_id || !partMap.has(l.part_id))
+  if (ungroupedLessons.length > 0) partGroups.push({ part: null, lessons: ungroupedLessons })
+  const hasPartGroups = courseParts.length > 0
 
   function getEffectiveMode(e: Enrollment): 'open' | 'sequential' {
     const mode = e.access_mode || e.cohorts?.access_mode || e.cohorts?.courses?.access_mode || 'open'
@@ -98,6 +120,21 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews 
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm border-collapse">
             <thead>
+              {hasPartGroups && (
+                <tr>
+                  <th />
+                  {partGroups.map(pg => (
+                    <th
+                      key={pg.part?.id ?? 'none'}
+                      colSpan={pg.lessons.length}
+                      className="text-center text-xs font-semibold text-purple-600 pb-1 px-1 border-b border-purple-100"
+                    >
+                      {pg.part ? `${pg.part.number}. ${pg.part.title}` : ''}
+                    </th>
+                  ))}
+                  <th />
+                </tr>
+              )}
               <tr className="border-b border-gray-200">
                 <th className="text-right py-2 pr-4 font-semibold text-gray-700 min-w-[160px]">תלמיד</th>
                 {cohortLessons.map(l => (

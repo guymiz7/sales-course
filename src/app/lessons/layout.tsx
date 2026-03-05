@@ -30,16 +30,19 @@ export default async function LessonsLayout({ children }: { children: React.Reac
     (cohortData?.cohorts as any)?.courses?.access_mode ||
     'open'
 
-  // Fetch views and lessons in parallel
-  const [{ data: views }, { data: lessons }] = await Promise.all([
+  // Fetch views, lessons, and parts in parallel
+  const [{ data: views }, { data: lessons }, { data: parts }] = await Promise.all([
     supabase.from('lesson_views').select('lesson_id').eq('user_id', user.id),
     courseId
-      ? supabase.from('lessons').select('id, number, title')
+      ? supabase.from('lessons').select('id, number, title, part_id')
           .eq('course_id', courseId)
           .or(studentCohortId
             ? `cohort_id.is.null,cohort_id.eq.${studentCohortId}`
             : 'cohort_id.is.null')
           .order('number')
+      : Promise.resolve({ data: [] as any[] }),
+    courseId
+      ? supabase.from('parts').select('id, number, title').eq('course_id', courseId).order('number')
       : Promise.resolve({ data: [] as any[] }),
   ])
   const viewedLessonIds = (views || []).map(v => v.lesson_id as string)
@@ -50,6 +53,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
       <div className="flex max-w-6xl mx-auto">
         <LessonSidebar
           lessons={lessons || []}
+          parts={parts || []}
           viewedLessonIds={viewedLessonIds}
           accessMode={effectiveMode}
         />

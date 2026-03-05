@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null; homework: string }
+interface Part { id: string; number: number; title: string }
+interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null; homework: string; part_id: string | null }
 interface Cohort { id: string; name: string; start_date: string; access_mode: string | null }
-interface Course { id: string; name: string; description: string; access_mode: string; image_url: string | null; cohorts: Cohort[]; lessons: Lesson[] }
+interface Course { id: string; name: string; description: string; access_mode: string; image_url: string | null; cohorts: Cohort[]; lessons: Lesson[]; parts: Part[] }
 
 function extractDriveId(input: string): string {
   const match = input.match(/\/d\/([a-zA-Z0-9_-]+)/)
@@ -28,6 +29,7 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
   const [enrolledCohorts, setEnrolledCohorts] = useState<string[]>([])
   const [editingLesson, setEditingLesson] = useState<string | null>(null)
   const [editFields, setEditFields] = useState<Partial<Lesson>>({})
+  const [newPartTitle, setNewPartTitle] = useState('')
   const supabase = createClient()
   const router = useRouter()
 
@@ -63,6 +65,22 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
     await supabase.from('courses').delete().eq('id', courseId)
     if (selectedCourse?.id === courseId) setSelectedCourse(courses.find(c => c.id !== courseId) || null)
     setLoading('')
+    router.refresh()
+  }
+
+  async function addPart() {
+    if (!selectedCourse || !newPartTitle.trim()) return
+    setLoading('part')
+    const nextNumber = (selectedCourse.parts?.length || 0) + 1
+    await supabase.from('parts').insert({ course_id: selectedCourse.id, number: nextNumber, title: newPartTitle.trim() })
+    setNewPartTitle('')
+    setLoading('')
+    router.refresh()
+  }
+
+  async function deletePart(partId: string, partTitle: string) {
+    if (!window.confirm(`למחוק את החלק "${partTitle}"?\nהשיעורים שלו לא יימחקו אלא יאבדו את השיוך לחלק.`)) return
+    await supabase.from('parts').delete().eq('id', partId)
     router.refresh()
   }
 
@@ -141,6 +159,7 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
       download_url: lesson.download_url,
       cohort_id: lesson.cohort_id,
       homework: lesson.homework,
+      part_id: lesson.part_id,
     })
   }
 
@@ -164,6 +183,7 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
       download_url: toDownloadUrl(editFields.download_url || ''),
       cohort_id: editFields.cohort_id || null,
       homework: editFields.homework?.trim() || null,
+      part_id: editFields.part_id || null,
     }).eq('id', lessonId)
     setEditingLesson(null)
     setEditFields({})
@@ -320,6 +340,44 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
         <h2 className="text-sm font-semibold text-gray-700 mb-3">שיעורים</h2>
         {selectedCourse ? (
           <>
+            {/* Parts management */}
+            <div className="mb-4 bg-purple-50 border border-purple-100 rounded-xl p-3">
+              <p className="text-xs font-semibold text-purple-700 mb-2">חלקים</p>
+              <div className="space-y-1 mb-2">
+                {(selectedCourse.parts || []).sort((a, b) => a.number - b.number).map(part => (
+                  <div key={part.id} className="flex items-center justify-between text-xs text-purple-800">
+                    <span>{part.number}. {part.title}</span>
+                    <button
+                      onClick={() => deletePart(part.id, part.title)}
+                      className="text-purple-300 hover:text-red-500 transition p-0.5"
+                      title="מחק חלק"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                ))}
+                {!selectedCourse.parts?.length && (
+                  <p className="text-xs text-purple-400">אין חלקים עדיין</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={newPartTitle}
+                  onChange={e => setNewPartTitle(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addPart()}
+                  placeholder="שם החלק"
+                  className="flex-1 border border-purple-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-400"
+                />
+                <button
+                  onClick={addPart}
+                  disabled={loading === 'part'}
+                  className="bg-purple-600 text-white px-2.5 py-1 rounded text-xs hover:bg-purple-700 disabled:opacity-50 transition"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-2 mb-4">
               {selectedCourse.lessons?.sort((a, b) => a.number - b.number).map(lesson => (
                 <div key={lesson.id} className="bg-white border border-gray-200 rounded-lg p-3">
@@ -426,6 +484,33 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                           ))}
                         </div>
                       </div>
+                      {/* Part assignment */}
+                      {selectedCourse.parts?.length > 0 && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">חלק:</p>
+                          <div className="flex gap-1 flex-wrap">
+                            <button
+                              onClick={() => setEditFields(p => ({ ...p, part_id: null }))}
+                              className={`px-2 py-0.5 rounded text-xs transition ${
+                                !editFields.part_id ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                            >
+                              ללא חלק
+                            </button>
+                            {selectedCourse.parts.sort((a, b) => a.number - b.number).map(part => (
+                              <button
+                                key={part.id}
+                                onClick={() => setEditFields(p => ({ ...p, part_id: part.id }))}
+                                className={`px-2 py-0.5 rounded text-xs transition ${
+                                  editFields.part_id === part.id ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                {part.number}. {part.title}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div>
@@ -442,6 +527,11 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                       {lesson.cohort_id && (
                         <p className="text-xs text-orange-400 mt-0.5">
                           🔒 {selectedCourse.cohorts?.find(c => c.id === lesson.cohort_id)?.name || 'מחזור ספציפי'}
+                        </p>
+                      )}
+                      {lesson.part_id && (
+                        <p className="text-xs text-purple-400 mt-0.5">
+                          📁 {selectedCourse.parts?.find(p => p.id === lesson.part_id)?.title || 'חלק'}
                         </p>
                       )}
                     </div>
