@@ -111,7 +111,7 @@ export default async function PreviewLessonPage({ params }: { params: { id: stri
 
               <div className="mt-5">
                 <QuestionList
-                  questions={questions || []}
+                  questions={(questions || []) as any}
                   currentUserId={user!.id}
                 />
               </div>

@@ -167,7 +167,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
       .single()
 
     if (newReply) {
-      setLocalReplies(prev => [...prev, newReply as Reply])
+      setLocalReplies(prev => [...prev, newReply as unknown as Reply])
     }
 
     // Admin reply → auto-mark done

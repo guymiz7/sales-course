@@ -32,7 +32,7 @@ export default async function AllQuestionsPage() {
         <h1 className="text-2xl font-bold text-gray-900">כל השאלות</h1>
         <p className="text-sm text-gray-500 mt-1">שאלות מכל שיעורי הקורס</p>
       </div>
-      <AllQuestionsView questions={questions || []} currentUserId={user.id} />
+      <AllQuestionsView questions={(questions || []) as any} currentUserId={user.id} />
     </div>
   )
 }

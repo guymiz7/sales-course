@@ -23,7 +23,7 @@ export default async function PendingUsersPage() {
           {pending?.length || 0} משתמשים ממתינים
         </p>
       </div>
-      <PendingUsersList users={pending || []} cohorts={cohorts || []} />
+      <PendingUsersList users={pending || []} cohorts={(cohorts || []) as any} />
     </div>
   )
 }

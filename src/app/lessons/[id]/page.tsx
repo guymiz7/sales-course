@@ -124,7 +124,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
         {/* Questions list */}
         <div className="mt-5">
           <QuestionList
-            questions={questions || []}
+            questions={(questions || []) as any}
             currentUserId={user.id}
           />
         </div>

@@ -13,7 +13,7 @@ export default async function PreviewPage() {
     .eq('user_id', user!.id)
     .single()
 
-  const courseId = (cohortData?.cohorts as { course_id: string } | null)?.course_id
+  const courseId = (cohortData?.cohorts as unknown as { course_id: string } | null)?.course_id
 
   const { data: lessons } = courseId ? await supabase
     .from('lessons')
