@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
 import VideoPlayer from '@/components/VideoPlayer'
 import QuestionList from '@/components/QuestionList'
 import NewQuestionForm from '@/components/NewQuestionForm'
@@ -69,6 +70,12 @@ export default async function LessonPage({ params }: { params: { id: string } })
     }
   }
 
+  // Fetch prev/next lessons for navigation
+  const [{ data: prevLesson }, { data: nextLesson }] = await Promise.all([
+    supabase.from('lessons').select('id, number, title').eq('course_id', lesson.course_id).eq('number', lesson.number - 1).maybeSingle(),
+    supabase.from('lessons').select('id, number, title').eq('course_id', lesson.course_id).eq('number', lesson.number + 1).maybeSingle(),
+  ])
+
   // Record view and fetch questions in parallel
   const [, { data: questions }] = await Promise.all([
     supabase.from('lesson_views').upsert(
@@ -128,6 +135,34 @@ export default async function LessonPage({ params }: { params: { id: string } })
         <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
           <h2 className="text-sm font-semibold text-amber-800 mb-2">📝 שיעורי בית</h2>
           <TextWithLinks text={(lesson as any).homework} />
+        </div>
+      )}
+
+      {/* Lesson navigation */}
+      {(prevLesson || nextLesson) && (
+        <div className="flex items-center justify-between gap-4 mb-8 mt-2">
+          {prevLesson ? (
+            <Link
+              href={`/lessons/${prevLesson.id}`}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition min-w-0"
+            >
+              <svg className="w-4 h-4 shrink-0 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="truncate">{prevLesson.number}. {prevLesson.title}</span>
+            </Link>
+          ) : <div />}
+          {nextLesson ? (
+            <Link
+              href={`/lessons/${nextLesson.id}`}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition min-w-0"
+            >
+              <span className="truncate">{nextLesson.number}. {nextLesson.title}</span>
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          ) : <div />}
         </div>
       )}
 
