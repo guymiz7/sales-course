@@ -16,7 +16,7 @@ export default function VideoPlayer({ fileId }: { fileId: string }) {
 
   return (
     <div>
-      <div className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-sm">
+      <div className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-sm relative">
         <iframe
           src={embedUrl}
           width="100%"
@@ -26,6 +26,8 @@ export default function VideoPlayer({ fileId }: { fileId: string }) {
           className="w-full h-full"
           onContextMenu={e => e.preventDefault()}
         />
+        {/* Block the Google Drive download/open button in top-right corner */}
+        <div className="absolute top-0 right-0 w-12 h-12 z-10" />
       </div>
       <div className="mt-2 text-right">
         <button
