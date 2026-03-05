@@ -12,7 +12,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
   const [{ data: profile }, { data: cohortData }] = await Promise.all([
     supabase.from('users').select('full_name, role').eq('id', user.id).single(),
     supabase.from('user_cohorts')
-      .select('cohort_id, access_mode, cohorts(course_id, access_mode, courses(access_mode))')
+      .select('cohort_id, access_mode, cohorts(course_id, access_mode, courses(name, access_mode))')
       .eq('user_id', user.id)
       .single(),
   ])
@@ -21,6 +21,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
   if (profile?.role === 'admin') redirect('/admin')
 
   const courseId = (cohortData?.cohorts as any)?.course_id
+  const courseName = (cohortData?.cohorts as any)?.courses?.name as string | undefined
   const studentCohortId = cohortData?.cohort_id
 
   const effectiveMode: 'open' | 'sequential' =
@@ -45,7 +46,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar userName={profile?.full_name || ''} role="student" />
+      <Navbar userName={profile?.full_name || ''} role="student" courseName={courseName} />
       <div className="flex max-w-6xl mx-auto">
         <LessonSidebar
           lessons={lessons || []}

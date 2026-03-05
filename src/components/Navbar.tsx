@@ -6,16 +6,18 @@ import clsx from 'clsx'
 interface NavbarProps {
   userName: string
   role: 'admin' | 'student'
+  courseName?: string
 }
 
-export default function Navbar({ userName, role }: NavbarProps) {
+export default function Navbar({ userName, role, courseName }: NavbarProps) {
   const pathname = usePathname()
 
   return (
     <header className="h-14 border-b border-gray-200 bg-white flex items-center px-6 justify-between sticky top-0 z-10">
       {/* Right: logo */}
-      <Link href={role === 'admin' ? '/admin' : '/lessons'} className="font-bold text-gray-900 text-base">
-        קורס מכירות
+      <Link href={role === 'admin' ? '/admin' : '/lessons'} className="flex items-center gap-2">
+        <img src="/logo.png" alt="לוגו" className="h-8 w-auto object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+        {courseName && <span className="font-semibold text-gray-900 text-sm">{courseName}</span>}
       </Link>
 
       {/* Center: navigation (admin only) */}
