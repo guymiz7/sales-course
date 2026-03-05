@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
@@ -27,6 +28,7 @@ interface Props {
 
 export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode }: Props) {
   const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const maxViewedNumber = accessMode === 'sequential' && viewedLessonIds
     ? Math.max(0, ...lessons.filter(l => viewedLessonIds.includes(l.id)).map(l => l.number))
@@ -55,6 +57,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       <Link
         key={lesson.id}
         href={href}
+        onClick={() => setMobileOpen(false)}
         className={clsx(
           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
           active
@@ -92,14 +95,22 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
 
   const hasGroups = groups.some(g => g.part !== null)
 
-  return (
-    <aside className="w-64 min-h-screen border-r border-gray-200 bg-white p-4 shrink-0">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
-        שיעורים
-      </p>
+  const sidebarContent = (
+    <>
+      <div className="flex items-center justify-between mb-3 px-2">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          שיעורים
+        </p>
+        <button
+          className="md:hidden text-gray-400 hover:text-gray-600 text-lg leading-none p-1"
+          onClick={() => setMobileOpen(false)}
+        >
+          ✕
+        </button>
+      </div>
       <nav className="space-y-0.5">
         {hasGroups ? (
-          groups.map((group, gi) => (
+          groups.map((group) => (
             <div key={group.part?.id ?? 'ungrouped'}>
               {group.part && (
                 <div className="mt-3 mb-0.5">
@@ -143,6 +154,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
         <div className="mt-4 pt-4 border-t border-gray-100">
           <Link
             href="/lessons/questions"
+            onClick={() => setMobileOpen(false)}
             className={clsx(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
               pathname === '/lessons/questions'
@@ -160,6 +172,44 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
           </Link>
         </div>
       )}
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Desktop sidebar — always visible in flow */}
+      <aside className="hidden md:block w-64 min-h-screen border-r border-gray-200 bg-white p-4 shrink-0">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile: backdrop */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile: slide-in drawer from right */}
+      <aside
+        className={clsx(
+          'md:hidden fixed top-0 right-0 bottom-0 w-72 bg-white border-l border-gray-200 p-4 overflow-y-auto z-50 transition-transform duration-300',
+          mobileOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile: floating toggle button */}
+      {!mobileOpen && (
+        <button
+          className="md:hidden fixed bottom-6 left-4 z-30 bg-indigo-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg text-lg"
+          onClick={() => setMobileOpen(true)}
+          aria-label="פתח תפריט שיעורים"
+        >
+          ☰
+        </button>
+      )}
+    </>
   )
 }
