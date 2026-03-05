@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import AdminRealtimeRefresher from '@/components/AdminRealtimeRefresher'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -23,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         pendingCount={pendingCount || 0}
         openQuestionsCount={openQuestionsCount || 0}
       />
+      <AdminRealtimeRefresher />
       <main className="max-w-5xl mx-auto p-6">{children}</main>
     </div>
   )
