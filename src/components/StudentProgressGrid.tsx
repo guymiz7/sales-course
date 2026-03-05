@@ -28,6 +28,7 @@ interface Lesson {
 interface LessonView {
   lesson_id: string
   user_id: string
+  watch_seconds?: number | null
 }
 
 interface Props {
@@ -56,6 +57,7 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews 
     .sort((a, b) => a.number - b.number)
 
   const viewedSet = new Set(lessonViews.map(v => `${v.user_id}:${v.lesson_id}`))
+  const watchMap = new Map(lessonViews.map(v => [`${v.user_id}:${v.lesson_id}`, v.watch_seconds || 0]))
 
   function getEffectiveMode(e: Enrollment): 'open' | 'sequential' {
     const mode = e.access_mode || e.cohorts?.access_mode || e.cohorts?.courses?.access_mode || 'open'
@@ -118,13 +120,20 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews 
                       <p className="text-xs text-gray-400">{viewedCount}/{cohortLessons.length} שיעורים</p>
                     </td>
                     {cohortLessons.map(l => {
-                      const viewed = viewedSet.has(`${student.user_id}:${l.id}`)
+                      const key = `${student.user_id}:${l.id}`
+                      const viewed = viewedSet.has(key)
+                      const mins = Math.round((watchMap.get(key) || 0) / 60)
                       return (
                         <td key={l.id} className="text-center py-2.5 px-2">
-                          <span
-                            className={`inline-block w-5 h-5 rounded-full ${viewed ? 'bg-green-400' : 'bg-gray-200'}`}
-                            title={`${l.title}${viewed ? ' — נצפה' : ' — לא נצפה'}`}
-                          />
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span
+                              className={`inline-block w-5 h-5 rounded-full ${viewed ? 'bg-green-400' : 'bg-gray-200'}`}
+                              title={`${l.title}${viewed ? ` — ${mins} דק'` : ' — לא נצפה'}`}
+                            />
+                            {viewed && mins > 0 && (
+                              <span className="text-[10px] text-gray-400 leading-none">{mins}′</span>
+                            )}
+                          </div>
                         </td>
                       )
                     })}

@@ -20,10 +20,10 @@ export default async function StudentsPage() {
     .select('id, number, title, course_id, cohort_id')
     .order('number')
 
-  // All lesson views
+  // All lesson views with watch time
   const { data: lessonViews } = await supabase
     .from('lesson_views')
-    .select('lesson_id, user_id')
+    .select('lesson_id, user_id, watch_seconds')
 
   return (
     <div>

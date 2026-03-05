@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import VideoPlayer from '@/components/VideoPlayer'
 import QuestionList from '@/components/QuestionList'
 import NewQuestionForm from '@/components/NewQuestionForm'
+import WatchTimeTracker from '@/components/WatchTimeTracker'
 
 export default async function LessonPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -80,6 +81,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
       {/* Video */}
       <div className="mb-6">
         <VideoPlayer fileId={lesson.google_drive_file_id} />
+        <WatchTimeTracker lessonId={lesson.id} userId={user.id} />
       </div>
 
       {/* Description + Download */}
