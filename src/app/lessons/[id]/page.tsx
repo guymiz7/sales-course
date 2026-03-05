@@ -5,6 +5,23 @@ import QuestionList from '@/components/QuestionList'
 import NewQuestionForm from '@/components/NewQuestionForm'
 import WatchTimeTracker from '@/components/WatchTimeTracker'
 
+function TextWithLinks({ text }: { text: string }) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+  return (
+    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+      {parts.map((part, i) =>
+        urlRegex.test(part) ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+            className="text-indigo-600 underline hover:text-indigo-800 break-all">
+            {part}
+          </a>
+        ) : part
+      )}
+    </p>
+  )
+}
+
 export default async function LessonPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -13,7 +30,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
   // Fetch lesson and cohort in parallel
   const [{ data: lesson }, { data: cohortData }] = await Promise.all([
     supabase.from('lessons')
-      .select('id, number, title, google_drive_file_id, description, download_url, course_id')
+      .select('id, number, title, google_drive_file_id, description, download_url, homework, course_id')
       .eq('id', params.id)
       .single(),
     supabase.from('user_cohorts')
@@ -88,7 +105,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
       {(lesson.description || lesson.download_url) && (
         <div className="mb-8 space-y-3">
           {lesson.description && (
-            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{lesson.description}</p>
+            <TextWithLinks text={lesson.description} />
           )}
           {lesson.download_url && (
             <a
@@ -103,6 +120,14 @@ export default async function LessonPage({ params }: { params: { id: string } })
               הורד חומרי לימוד
             </a>
           )}
+        </div>
+      )}
+
+      {/* Homework */}
+      {(lesson as any).homework && (
+        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <h2 className="text-sm font-semibold text-amber-800 mb-2">📝 שיעורי בית</h2>
+          <TextWithLinks text={(lesson as any).homework} />
         </div>
       )}
 

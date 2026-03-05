@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null }
+interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null; homework: string }
 interface Cohort { id: string; name: string; start_date: string; access_mode: string | null }
 interface Course { id: string; name: string; description: string; access_mode: string; cohorts: Cohort[]; lessons: Lesson[] }
 
@@ -127,6 +127,7 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
       description: lesson.description,
       download_url: lesson.download_url,
       cohort_id: lesson.cohort_id,
+      homework: lesson.homework,
     })
   }
 
@@ -149,6 +150,7 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
       description: editFields.description?.trim(),
       download_url: toDownloadUrl(editFields.download_url || ''),
       cohort_id: editFields.cohort_id || null,
+      homework: editFields.homework?.trim() || null,
     }).eq('id', lessonId)
     setEditingLesson(null)
     setEditFields({})
@@ -342,6 +344,13 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                         value={editFields.description || ''}
                         onChange={e => setEditFields(p => ({ ...p, description: e.target.value }))}
                         placeholder="תיאור השיעור (אופציונלי)"
+                        rows={2}
+                        className="w-full text-xs text-gray-500 border border-gray-200 rounded px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                      />
+                      <textarea
+                        value={editFields.homework || ''}
+                        onChange={e => setEditFields(p => ({ ...p, homework: e.target.value }))}
+                        placeholder="שיעורי בית (אופציונלי)"
                         rows={2}
                         className="w-full text-xs text-gray-500 border border-gray-200 rounded px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
                       />

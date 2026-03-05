@@ -9,7 +9,7 @@ export default async function CoursesPage() {
     .select(`
       id, name, description, access_mode,
       cohorts(id, name, start_date, access_mode),
-      lessons(id, number, title, google_drive_file_id, description, download_url, cohort_id)
+      lessons(id, number, title, google_drive_file_id, description, download_url, cohort_id, homework)
     `)
     .order('id')
 
