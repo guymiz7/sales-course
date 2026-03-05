@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import QuestionCard from './QuestionCard'
@@ -32,6 +32,8 @@ export default function AdminQuestionList({ questions, currentUserId, showFilter
   const [localQuestions, setLocalQuestions] = useState(questions)
   const supabase = createClient()
   const router = useRouter()
+
+  useEffect(() => { setLocalQuestions(questions) }, [questions])
 
   const filtered = localQuestions.filter(q => {
     if (filter === 'answered') return q.replies.length > 0

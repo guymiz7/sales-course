@@ -29,6 +29,7 @@ interface Props {
 export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode }: Props) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const maxViewedNumber = accessMode === 'sequential' && viewedLessonIds
     ? Math.max(0, ...lessons.filter(l => viewedLessonIds.includes(l.id)).map(l => l.number))
@@ -118,7 +119,8 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
                     <img
                       src={group.part.image_url}
                       alt={group.part.title}
-                      className="w-full rounded-lg mb-1.5 object-cover max-h-24"
+                      className="w-full rounded-lg mb-1.5 object-cover max-h-24 cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setLightboxUrl(group.part!.image_url!)}
                     />
                   )}
                   <div className="flex items-center justify-between px-2 py-1.5">
@@ -199,6 +201,20 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       >
         {sidebarContent}
       </aside>
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-w-full max-h-full rounded-lg shadow-2xl object-contain"
+          />
+        </div>
+      )}
 
       {/* Mobile: floating toggle button */}
       {!mobileOpen && (

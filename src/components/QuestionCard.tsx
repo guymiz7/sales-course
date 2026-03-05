@@ -175,6 +175,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
     if (isAdmin) {
       setIsDone(true)
       await supabase.from('questions').update({ is_done: true }).eq('id', question.id)
+      router.refresh()
     }
 
     // Owner replies on closed question → reopen with timer reset
