@@ -14,11 +14,12 @@ export default async function StudentsPage() {
     `)
     .order('cohort_id')
 
-  // All lessons, views, and parts in parallel
-  const [{ data: lessons }, { data: lessonViews }, { data: parts }] = await Promise.all([
+  // All lessons, views, parts, and cohorts in parallel
+  const [{ data: lessons }, { data: lessonViews }, { data: parts }, { data: allCohorts }] = await Promise.all([
     supabase.from('lessons').select('id, number, title, course_id, cohort_id, part_id').order('number'),
     supabase.from('lesson_views').select('lesson_id, user_id, watch_seconds'),
     supabase.from('parts').select('id, number, title, course_id').order('number'),
+    supabase.from('cohorts').select('id, name, course_id, courses(name)').order('name'),
   ])
 
   return (
@@ -32,6 +33,7 @@ export default async function StudentsPage() {
         lessons={(lessons || []) as any}
         lessonViews={lessonViews || []}
         parts={parts || []}
+        allCohorts={(allCohorts || []) as any}
       />
     </div>
   )

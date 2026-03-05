@@ -39,16 +39,25 @@ interface LessonView {
   watch_seconds?: number | null
 }
 
+interface CohortOption {
+  id: string
+  name: string
+  course_id: string
+  courses: { name: string } | null
+}
+
 interface Props {
   enrollments: Enrollment[]
   lessons: Lesson[]
   lessonViews: LessonView[]
   parts?: Part[]
+  allCohorts?: CohortOption[]
 }
 
-export default function StudentProgressGrid({ enrollments, lessons, lessonViews, parts }: Props) {
+export default function StudentProgressGrid({ enrollments, lessons, lessonViews, parts, allCohorts }: Props) {
   const supabase = createClient()
   const router = useRouter()
+  const [managingUserId, setManagingUserId] = useState<string | null>(null)
 
   // Unique cohorts from enrollments
   const cohorts = Array.from(
@@ -88,6 +97,22 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
 
   async function updateMode(userId: string, cohortId: string, mode: 'open' | 'sequential' | null) {
     await supabase.from('user_cohorts').update({ access_mode: mode }).eq('user_id', userId).eq('cohort_id', cohortId)
+    router.refresh()
+  }
+
+  async function deleteStudent(userId: string, name: string) {
+    if (!window.confirm(`למחוק את "${name}" לגמרי מהמערכת?`)) return
+    await supabase.from('users').delete().eq('id', userId)
+    router.refresh()
+  }
+
+  async function removeFromCohort(userId: string, cohortId: string) {
+    await supabase.from('user_cohorts').delete().eq('user_id', userId).eq('cohort_id', cohortId)
+    router.refresh()
+  }
+
+  async function addToCohort(userId: string, cohortId: string) {
+    await supabase.from('user_cohorts').upsert({ user_id: userId, cohort_id: cohortId }, { onConflict: 'user_id,cohort_id', ignoreDuplicates: true })
     router.refresh()
   }
 
@@ -133,6 +158,7 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                     </th>
                   ))}
                   <th />
+                  <th />
                 </tr>
               )}
               <tr className="border-b border-gray-200">
@@ -143,6 +169,7 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                   </th>
                 ))}
                 <th className="text-center py-2 px-3 font-semibold text-gray-700 min-w-[100px]">גישה</th>
+                <th className="py-2 px-2 min-w-[60px]" />
               </tr>
             </thead>
             <tbody>
@@ -181,7 +208,61 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                         onChange={mode => updateMode(student.user_id, student.cohort_id, mode)}
                       />
                     </td>
+                    <td className="py-2.5 px-2">
+                      <div className="flex items-center gap-1 justify-center">
+                        <button
+                          onClick={() => setManagingUserId(managingUserId === student.user_id ? null : student.user_id)}
+                          className="text-gray-400 hover:text-indigo-600 transition text-sm"
+                          title="ניהול מחזורים"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => deleteStudent(student.user_id, student.users?.full_name || '')}
+                          className="text-gray-300 hover:text-red-500 transition text-sm"
+                          title="מחק תלמיד"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </td>
                   </tr>
+                  {managingUserId === student.user_id && (
+                    <tr className="bg-indigo-50">
+                      <td colSpan={cohortLessons.length + 3} className="px-4 py-3">
+                        <div className="flex flex-wrap gap-3 items-start">
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 mb-1">מחזורים נוכחיים:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {enrollments.filter(e => e.user_id === student.user_id).map(e => (
+                                <span key={e.cohort_id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-gray-200 rounded text-xs text-gray-700">
+                                  {e.cohorts?.name}
+                                  <button onClick={() => removeFromCohort(student.user_id, e.cohort_id)} className="text-gray-400 hover:text-red-500 ml-0.5">✕</button>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 mb-1">הוסף למחזור:</p>
+                            <select
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+                              defaultValue=""
+                              onChange={e => { if (e.target.value) { addToCohort(student.user_id, e.target.value); e.target.value = '' } }}
+                            >
+                              <option value="">בחר מחזור...</option>
+                              {(allCohorts || [])
+                                .filter(c => !enrollments.find(e => e.user_id === student.user_id && e.cohort_id === c.id))
+                                .map(c => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.courses?.name ? `${c.courses.name} — ` : ''}{c.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 )
               })}
             </tbody>

@@ -30,6 +30,7 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
           <NavLink href="/admin/pending" label="ממתינים לאישור" pathname={pathname} badge={pendingCount} />
           <NavLink href="/admin/courses" label="ניהול קורסים" pathname={pathname} />
           <NavLink href="/admin/students" label="תלמידים" pathname={pathname} />
+          <NavLink href="/admin/settings" label="הגדרות" pathname={pathname} />
           <Link
             href="/admin/preview"
             className="px-3 py-1.5 rounded-md text-sm transition text-indigo-600 hover:bg-indigo-50 font-medium"
