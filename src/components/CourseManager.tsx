@@ -201,6 +201,12 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
     return data.publicUrl
   }
 
+  async function deleteLesson(lessonId: string, lessonTitle: string) {
+    if (!window.confirm(`למחוק את השיעור "${lessonTitle}"?`)) return
+    await supabase.from('lessons').delete().eq('id', lessonId)
+    router.refresh()
+  }
+
   async function saveLesson(lessonId: string) {
     setLoading('save-' + lessonId)
     await supabase.from('lessons').update({
@@ -469,12 +475,21 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => startEdit(lesson)}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 transition"
-                      >
-                        עריכה
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => deleteLesson(lesson.id, lesson.title)}
+                          className="text-gray-300 hover:text-red-500 transition text-base leading-none"
+                          title="מחק שיעור"
+                        >
+                          🗑
+                        </button>
+                        <button
+                          onClick={() => startEdit(lesson)}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 transition"
+                        >
+                          עריכה
+                        </button>
+                      </div>
                     )}
                   </div>
 
