@@ -44,8 +44,8 @@ export default async function LessonsLayout({ children }: { children: React.Reac
     courseId
       ? supabase.from('parts').select('id, number, title, image_url').eq('course_id', courseId).order('number')
       : Promise.resolve({ data: [] as any[] }),
-    courseId
-      ? supabase.from('forms').select('id, title, order_num').eq('course_id', courseId).eq('is_active', true).order('order_num')
+    courseId && studentCohortId
+      ? supabase.from('forms').select('id, title, order_num, form_cohorts!inner(cohort_id, is_released)').eq('course_id', courseId).eq('is_active', true).eq('form_cohorts.cohort_id', studentCohortId).eq('form_cohorts.is_released', true).order('order_num')
       : Promise.resolve({ data: [] as any[] }),
     courseId
       ? supabase.from('form_responses').select('form_id').eq('user_id', user.id).not('submitted_at', 'is', null)

@@ -185,28 +185,27 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       {/* Forms section */}
       {!previewMode && forms && forms.length > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 px-2">טפסים</p>
-          {forms.map(form => {
-            const submitted = submittedFormIds?.includes(form.id)
-            const href = `/forms/${form.id}`
-            return (
-              <Link
-                key={form.id}
-                href={href}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition text-gray-700 hover:bg-gray-50"
-              >
-                <span className={clsx(
-                  'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
-                  submitted ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
-                )}>
-                  {submitted ? '✓' : '📋'}
-                </span>
-                <span className="truncate flex-1">{form.title}</span>
-                {submitted && <span className="text-xs text-green-500 shrink-0">הוגש</span>}
-              </Link>
-            )
-          })}
+          <Link
+            href="/lessons/forms"
+            onClick={() => setMobileOpen(false)}
+            className={clsx(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
+              pathname?.startsWith('/lessons/forms')
+                ? 'bg-indigo-50 text-indigo-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            )}
+          >
+            <span className={clsx(
+              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
+              pathname?.startsWith('/lessons/forms') ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
+            )}>
+              ✉
+            </span>
+            <span className="flex-1">טפסים</span>
+            <span className="text-xs text-gray-400 shrink-0">
+              {(submittedFormIds?.filter(id => forms.some(f => f.id === id)).length ?? 0)}/{forms.length}
+            </span>
+          </Link>
         </div>
       )}
     </>
