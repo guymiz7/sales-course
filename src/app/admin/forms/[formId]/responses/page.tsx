@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import UnsubmitResponseButton from '@/components/UnsubmitResponseButton'
 
 interface Props {
   params: Promise<{ formId: string }>
@@ -117,9 +118,12 @@ export default async function FormResponsesPage({ params }: Props) {
                   </div>
                   <div className="flex items-center gap-3">
                     {isSubmitted ? (
-                      <span className="text-xs bg-green-50 text-green-700 border border-green-100 rounded px-2 py-0.5">
-                        הוגש {formatDate(response.submitted_at!)}
-                      </span>
+                      <>
+                        <span className="text-xs bg-green-50 text-green-700 border border-green-100 rounded px-2 py-0.5">
+                          הוגש {formatDate(response.submitted_at!)}
+                        </span>
+                        <UnsubmitResponseButton responseId={response.id} />
+                      </>
                     ) : (
                       <span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 rounded px-2 py-0.5">
                         טיוטה

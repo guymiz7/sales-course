@@ -25,10 +25,10 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
       {/* Center: navigation (admin only) */}
       {role === 'admin' && (
         <nav className="flex items-center gap-1">
-          <NavLink href="/admin" label="שאלות פתוחות" pathname={pathname} badge={openQuestionsCount} />
+          <NavLink href="/admin" label="שאלות" pathname={pathname} badge={openQuestionsCount} exact />
           <NavLink href="/admin/questions" label="כל השאלות" pathname={pathname} />
-          <NavLink href="/admin/pending" label="ממתינים לאישור" pathname={pathname} badge={pendingCount} />
-          <NavLink href="/admin/courses" label="ניהול קורסים" pathname={pathname} />
+          <NavLink href="/admin/pending" label="ממתינים" pathname={pathname} badge={pendingCount} />
+          <NavLink href="/admin/courses" label="קורסים" pathname={pathname} />
           <NavLink href="/admin/students" label="תלמידים" pathname={pathname} />
           <NavLink href="/admin/forms" label="טפסים" pathname={pathname} />
           <NavLink href="/admin/settings" label="הגדרות" pathname={pathname} />
@@ -57,8 +57,8 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
   )
 }
 
-function NavLink({ href, label, pathname, badge }: { href: string; label: string; pathname: string; badge?: number }) {
-  const active = pathname === href
+function NavLink({ href, label, pathname, badge, exact }: { href: string; label: string; pathname: string; badge?: number; exact?: boolean }) {
+  const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
   return (
     <Link
       href={href}

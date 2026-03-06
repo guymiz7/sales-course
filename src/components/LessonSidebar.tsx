@@ -183,7 +183,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       )}
 
       {/* Forms section */}
-      {!previewMode && forms && forms.length > 0 && (
+      {forms && forms.length > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-100">
           <Link
             href="/lessons/forms"

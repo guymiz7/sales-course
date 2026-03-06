@@ -15,11 +15,14 @@ export default async function PreviewPage() {
 
   const courseId = (cohortData?.cohorts as unknown as { course_id: string } | null)?.course_id
 
-  const { data: lessons } = courseId ? await supabase
-    .from('lessons')
-    .select('id, number, title')
-    .eq('course_id', courseId)
-    .order('number') : { data: [] }
+  const [{ data: lessons }, { data: forms }] = await Promise.all([
+    courseId
+      ? supabase.from('lessons').select('id, number, title').eq('course_id', courseId).order('number')
+      : Promise.resolve({ data: [] as any[] }),
+    courseId
+      ? supabase.from('forms').select('id, title, order_num').eq('course_id', courseId).eq('is_active', true).order('order_num')
+      : Promise.resolve({ data: [] as any[] }),
+  ])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -38,7 +41,7 @@ export default async function PreviewPage() {
       </header>
 
       <div className="flex max-w-6xl mx-auto">
-        <LessonSidebar lessons={lessons || []} previewMode />
+        <LessonSidebar lessons={lessons || []} forms={forms || []} previewMode />
         <main className="flex-1 p-6">
           {!courseId ? (
             <div className="text-center mt-20">

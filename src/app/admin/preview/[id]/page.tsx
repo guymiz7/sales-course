@@ -27,12 +27,11 @@ export default async function PreviewLessonPage({ params }: { params: { id: stri
 
   const cohortId = cohortData?.cohort_id
 
-  // Get all lessons for sidebar
-  const { data: lessons } = await supabase
-    .from('lessons')
-    .select('id, number, title')
-    .eq('course_id', (lesson as { course_id: string }).course_id)
-    .order('number')
+  // Get all lessons and forms for sidebar
+  const [{ data: lessons }, { data: forms }] = await Promise.all([
+    supabase.from('lessons').select('id, number, title').eq('course_id', (lesson as { course_id: string }).course_id).order('number'),
+    supabase.from('forms').select('id, title, order_num').eq('course_id', (lesson as { course_id: string }).course_id).eq('is_active', true).order('order_num'),
+  ])
 
   // Get questions (same as student view)
   const { data: questions } = await supabase
@@ -64,7 +63,7 @@ export default async function PreviewLessonPage({ params }: { params: { id: stri
       </header>
 
       <div className="flex max-w-6xl mx-auto">
-        <LessonSidebar lessons={lessons || []} previewMode />
+        <LessonSidebar lessons={lessons || []} forms={forms || []} previewMode />
         <main className="flex-1 p-6">
           <div className="max-w-3xl">
             <div className="mb-6">
