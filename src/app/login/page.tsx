@@ -66,8 +66,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">קורס מכירות</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <img src="/logo.png" alt="לוגו" className="h-20 w-auto mx-auto mb-4 object-contain" />
+          <p className="text-gray-500 text-sm">
             {forgotMode ? 'איפוס סיסמה' : 'כניסה לפלטפורמה'}
           </p>
         </div>

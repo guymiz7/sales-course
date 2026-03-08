@@ -44,6 +44,19 @@ export default function RegisterPage() {
         full_name: fullName,
         role: 'pending',
       })
+
+      // Send welcome email + pending webhook (fire and forget)
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'welcome', to: email, name: fullName }),
+      }).catch(() => {})
+      fetch('/api/admin/send-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'pending_user', id: data.user.id }),
+      }).catch(() => {})
+
       router.push('/pending')
     }
   }
@@ -52,8 +65,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">קורס מכירות</h1>
-          <p className="text-gray-500 text-sm mt-1">הרשמה לפלטפורמה</p>
+          <img src="/logo.png" alt="לוגו" className="h-20 w-auto mx-auto mb-4 object-contain" />
+          <p className="text-gray-500 text-sm">הרשמה לפלטפורמה</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">

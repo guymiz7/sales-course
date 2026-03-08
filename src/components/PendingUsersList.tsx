@@ -38,6 +38,18 @@ export default function PendingUsersList({ users, cohorts }: Props) {
       approved_at: new Date().toISOString(),
     })
 
+    // Send approval email + webhook (fire and forget)
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'approved', to: user.email, name: user.full_name }),
+    }).catch(() => {})
+    fetch('/api/admin/send-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'user_approved', id: user.id }),
+    }).catch(() => {})
+
     setLoading(null)
     router.refresh()
   }

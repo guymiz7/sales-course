@@ -52,6 +52,22 @@ export async function POST(req: NextRequest) {
       email: user.email,
       approve_url: `${baseUrl}/api/admin/approve`,
     }
+  } else if (type === 'user_approved') {
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, full_name, email')
+      .eq('id', id)
+      .single()
+
+    if (!user) return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
+
+    payload = {
+      type: 'user_approved',
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      login_url: `${baseUrl}/login`,
+    }
   } else {
     return NextResponse.json({ error: 'סוג לא תקין' }, { status: 400 })
   }
