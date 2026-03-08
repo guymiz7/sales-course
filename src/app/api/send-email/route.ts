@@ -20,7 +20,7 @@ function baseLayout(content: string) {
         <!-- Header -->
         <tr>
           <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:36px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:bold;color:#ffffff;letter-spacing:0.5px;">קורס מכירות</p>
+            <img src="${SITE_URL}/logo.png" alt="קורס מכירות" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto;" />
           </td>
         </tr>
 
