@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-site.com'
 
 // ─── Email HTML templates ──────────────────────────────────────────────────────
@@ -92,6 +90,9 @@ export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ error: 'RESEND_API_KEY not set' }, { status: 500 })
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const FROM = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
 
   const { type, to, name } = await req.json()
 
