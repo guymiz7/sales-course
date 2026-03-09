@@ -1,8 +1,10 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import clsx from 'clsx'
 import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { createClient } from '@/lib/supabase/client'
 
 interface NavbarProps {
   userName: string
@@ -11,13 +13,54 @@ interface NavbarProps {
   pendingCount?: number
   openQuestionsCount?: number
   socialLinks?: SocialLinks
+  userId?: string
 }
 
-export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount, socialLinks }: NavbarProps) {
+export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount, socialLinks, userId }: NavbarProps) {
   const pathname = usePathname()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [adminChatUnread, setAdminChatUnread] = useState(0)
 
   const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => socialLinks?.[p.key])
   const followLinks = FOLLOW_PLATFORMS.filter(p => socialLinks?.[p.key])
+
+  // Admin: live unread PM badge
+  useEffect(() => {
+    if (role !== 'admin' || !userId) return
+    const supabase = createClient()
+
+    async function fetchUnread() {
+      const { count } = await supabase
+        .from('private_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('receiver_id', userId!)
+        .is('read_at', null)
+      setAdminChatUnread(count || 0)
+    }
+
+    fetchUnread()
+
+    const channel = supabase.channel('admin_navbar_pm')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${userId}` }, fetchUnread)
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [role, userId])
+
+  // Close mobile nav on route change
+  useEffect(() => { setMobileNavOpen(false) }, [pathname])
+
+  const adminLinks = [
+    { href: '/admin', label: 'שאלות', badge: openQuestionsCount, exact: true },
+    { href: '/admin/questions', label: 'כל השאלות' },
+    { href: '/admin/pending', label: 'ממתינים', badge: pendingCount },
+    { href: '/admin/courses', label: 'קורסים' },
+    { href: '/admin/students', label: 'תלמידים' },
+    { href: '/admin/forms', label: 'טפסים' },
+    { href: '/admin/community', label: 'קהילה' },
+    { href: '/admin/chat', label: 'צ׳אט', badge: adminChatUnread },
+    { href: '/admin/settings', label: 'הגדרות' },
+  ]
 
   return (
     <header className="h-14 border-b border-gray-200 bg-white flex items-center px-6 justify-between sticky top-0 z-10">
@@ -27,10 +70,9 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
         {courseName && <span className="font-semibold text-gray-900 text-sm">{courseName}</span>}
       </Link>
 
-      {/* Center: recommend + follow (student) or nav (admin) */}
+      {/* Center: recommend + follow (student, desktop only) */}
       {role === 'student' && socialLinks && (recommendLinks.length > 0 || followLinks.length > 0) && (
         <nav className="hidden md:flex items-center gap-2">
-          {/* Recommend buttons */}
           {recommendLinks.map(p => (
             <a
               key={p.key}
@@ -43,8 +85,6 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
               {p.label}
             </a>
           ))}
-
-          {/* Follow divider + icons */}
           {followLinks.length > 0 && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400">עקוב אחרי גיא:</span>
@@ -65,17 +105,12 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
         </nav>
       )}
 
+      {/* Admin: desktop nav */}
       {role === 'admin' && (
-        <nav className="flex items-center gap-1 flex-wrap">
-          <NavLink href="/admin" label="שאלות" pathname={pathname} badge={openQuestionsCount} exact />
-          <NavLink href="/admin/questions" label="כל השאלות" pathname={pathname} />
-          <NavLink href="/admin/pending" label="ממתינים" pathname={pathname} badge={pendingCount} />
-          <NavLink href="/admin/courses" label="קורסים" pathname={pathname} />
-          <NavLink href="/admin/students" label="תלמידים" pathname={pathname} />
-          <NavLink href="/admin/forms" label="טפסים" pathname={pathname} />
-          <NavLink href="/admin/community" label="קהילה" pathname={pathname} />
-          <NavLink href="/admin/chat" label="צ׳אט" pathname={pathname} />
-          <NavLink href="/admin/settings" label="הגדרות" pathname={pathname} />
+        <nav className="hidden md:flex items-center gap-1 flex-wrap">
+          {adminLinks.map(l => (
+            <NavLink key={l.href} href={l.href} label={l.label} pathname={pathname} badge={l.badge} exact={l.exact} />
+          ))}
           <Link
             href="/admin/preview"
             className="px-3 py-1.5 rounded-md text-sm transition text-indigo-600 hover:bg-indigo-50 font-medium"
@@ -85,15 +120,46 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
         </nav>
       )}
 
-      {/* Left: user + logout */}
+      {/* Left: user + logout + mobile hamburger (admin) */}
       <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-600">{userName}</span>
+        <span className="text-sm text-gray-600 hidden sm:block">{userName}</span>
         <form action="/auth/signout" method="post">
           <button type="submit" className="text-sm text-gray-400 hover:text-gray-700 transition">
             יציאה
           </button>
         </form>
+        {/* Admin mobile hamburger */}
+        {role === 'admin' && (
+          <button
+            className="md:hidden flex flex-col gap-1 p-1"
+            onClick={() => setMobileNavOpen(v => !v)}
+            aria-label="תפריט ניהול"
+          >
+            <span className="w-5 h-0.5 bg-gray-600 block" />
+            <span className="w-5 h-0.5 bg-gray-600 block" />
+            <span className="w-5 h-0.5 bg-gray-600 block" />
+            {(adminChatUnread > 0 || (pendingCount || 0) > 0 || (openQuestionsCount || 0) > 0) && (
+              <span className="absolute top-2 left-4 w-2 h-2 bg-red-500 rounded-full" />
+            )}
+          </button>
+        )}
       </div>
+
+      {/* Admin mobile dropdown */}
+      {role === 'admin' && mobileNavOpen && (
+        <div className="md:hidden absolute top-14 right-0 left-0 bg-white border-b border-gray-200 shadow-md z-50 p-3 flex flex-col gap-1">
+          {adminLinks.map(l => (
+            <NavLink key={l.href} href={l.href} label={l.label} pathname={pathname} badge={l.badge} exact={l.exact} />
+          ))}
+          <Link
+            href="/admin/preview"
+            className="px-3 py-2 rounded-md text-sm text-indigo-600 hover:bg-indigo-50 font-medium"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            צפה כתלמיד
+          </Link>
+        </div>
+      )}
     </header>
   )
 }

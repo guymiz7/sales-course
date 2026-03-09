@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
@@ -42,6 +42,8 @@ interface Props {
 
 export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds, avatarUrl, userName, socialLinks, userId, cohortId }: Props) {
   const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [unreadPM, setUnreadPM] = useState(0)
@@ -66,7 +68,9 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
         .select('id', { count: 'exact', head: true })
         .eq('receiver_id', userId!)
         .is('read_at', null)
-      setUnreadPM(count || 0)
+      if (!pathnameRef.current?.startsWith('/lessons/chat')) {
+        setUnreadPM(count || 0)
+      }
     }
 
     async function fetchGroup() {
@@ -77,7 +81,9 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
         .eq('cohort_id', cohortId!)
         .neq('user_id', userId!)
         .gt('created_at', lastSeen)
-      setUnreadGroup(count || 0)
+      if (!pathnameRef.current?.startsWith('/lessons/chat')) {
+        setUnreadGroup(count || 0)
+      }
     }
 
     fetchPM()

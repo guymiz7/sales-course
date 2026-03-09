@@ -6,6 +6,7 @@ interface SocialLinks {
   google_review_url: string
   facebook_page_url: string
   facebook_follow_url: string
+  instagram_url: string
   linkedin_url: string
   youtube_url: string
   tiktok_url: string
@@ -32,6 +33,7 @@ export default function AdminSettingsForm({ webhookUrl, apiKey, socialLinks: ini
       google_review_url: social.google_review_url || null,
       facebook_page_url: social.facebook_page_url || null,
       facebook_follow_url: social.facebook_follow_url || null,
+      instagram_url: social.instagram_url || null,
       linkedin_url: social.linkedin_url || null,
       youtube_url: social.youtube_url || null,
       tiktok_url: social.tiktok_url || null,
@@ -166,6 +168,7 @@ export default function AdminSettingsForm({ webhookUrl, apiKey, socialLinks: ini
             { key: 'google_review_url', label: 'המלצה בגוגל' },
             { key: 'facebook_page_url', label: 'המלצה בפייסבוק' },
             { key: 'facebook_follow_url', label: 'עמוד פייסבוק (עקוב)' },
+            { key: 'instagram_url', label: 'אינסטגרם (עקוב)' },
             { key: 'linkedin_url', label: 'לינקדאין (עקוב)' },
             { key: 'youtube_url', label: 'יוטיוב (עקוב)' },
             { key: 'tiktok_url', label: 'טיקטוק (עקוב)' },

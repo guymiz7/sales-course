@@ -23,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         role="admin"
         pendingCount={pendingCount || 0}
         openQuestionsCount={openQuestionsCount || 0}
+        userId={user.id}
       />
       <AdminRealtimeRefresher />
       <main className="max-w-5xl mx-auto p-6">{children}</main>
