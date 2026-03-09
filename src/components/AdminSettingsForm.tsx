@@ -12,12 +12,23 @@ export default function AdminSettingsForm({ webhookUrl, apiKey }: Props) {
   const [url, setUrl] = useState(webhookUrl || '')
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState('')
+  const [showKey, setShowKey] = useState(false)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
   async function save() {
     await supabase.from('admin_settings').update({ webhook_url: url || null }).eq('id', 1)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const [currentKey, setCurrentKey] = useState(apiKey)
+
+  async function regenerateKey() {
+    if (!confirm('להחליף את מפתח ה-API? המפתח הישן יפסיק לעבוד מיד.')) return
+    const newKey = crypto.randomUUID()
+    await supabase.from('admin_settings').update({ api_key: newKey }).eq('id', 1)
+    setCurrentKey(newKey)
+    setShowKey(true)
   }
 
   function copy(text: string, key: string) {
@@ -43,13 +54,26 @@ export default function AdminSettingsForm({ webhookUrl, apiKey }: Props) {
         <p className="text-xs text-gray-500 mb-3">השתמש במפתח זה בכל קריאת API מרחוק.</p>
         <div className="flex items-center gap-2">
           <code className="flex-1 bg-gray-50 border border-gray-200 rounded px-3 py-2 text-xs font-mono text-gray-700 truncate">
-            {apiKey}
+            {showKey ? currentKey : '••••••••••••••••••••••••••••••••••••'}
           </code>
           <button
-            onClick={() => copy(apiKey, 'key')}
+            onClick={() => setShowKey(v => !v)}
+            className="shrink-0 px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded transition"
+            title={showKey ? 'הסתר' : 'הצג'}
+          >
+            {showKey ? '🙈' : '👁'}
+          </button>
+          <button
+            onClick={() => copy(currentKey, 'key')}
             className="shrink-0 px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded transition"
           >
             {copied === 'key' ? '✓ הועתק' : 'העתק'}
+          </button>
+          <button
+            onClick={regenerateKey}
+            className="shrink-0 px-3 py-2 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition"
+          >
+            החלף מפתח
           </button>
         </div>
       </div>
