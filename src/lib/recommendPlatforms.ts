@@ -8,12 +8,22 @@ export interface SocialLinks {
   autotuesday_url?: string | null
 }
 
-export const RECOMMEND_PLATFORMS = [
-  { key: 'google_review_url' as keyof SocialLinks, label: 'המלץ בגוגל', domain: 'google.com' },
-  { key: 'facebook_page_url' as keyof SocialLinks, label: 'המלץ בפייסבוק', domain: 'facebook.com' },
-  { key: 'facebook_follow_url' as keyof SocialLinks, label: 'עקוב בפייסבוק', domain: 'facebook.com' },
-  { key: 'linkedin_url' as keyof SocialLinks, label: 'עקוב בלינקדאין', domain: 'linkedin.com' },
-  { key: 'youtube_url' as keyof SocialLinks, label: 'עקוב ביוטיוב', domain: 'youtube.com' },
-  { key: 'tiktok_url' as keyof SocialLinks, label: 'עקוב בטיקטוק', domain: 'tiktok.com' },
+// The main "recommend" button (Google review)
+export const RECOMMEND_PLATFORM = {
+  key: 'google_review_url' as keyof SocialLinks,
+  label: 'המלץ על גיא',
+  domain: 'google.com',
+}
+
+// "Follow" platforms shown as favicon icons
+export const FOLLOW_PLATFORMS = [
+  { key: 'facebook_page_url' as keyof SocialLinks, label: 'פייסבוק', domain: 'facebook.com' },
+  { key: 'facebook_follow_url' as keyof SocialLinks, label: 'פייסבוק', domain: 'facebook.com' },
+  { key: 'linkedin_url' as keyof SocialLinks, label: 'לינקדאין', domain: 'linkedin.com' },
+  { key: 'youtube_url' as keyof SocialLinks, label: 'יוטיוב', domain: 'youtube.com' },
+  { key: 'tiktok_url' as keyof SocialLinks, label: 'טיקטוק', domain: 'tiktok.com' },
   { key: 'autotuesday_url' as keyof SocialLinks, label: 'Auto Tuesday', domain: 'autotuesday.com' },
 ]
+
+// All platforms combined (for backwards compat)
+export const RECOMMEND_PLATFORMS = [RECOMMEND_PLATFORM, ...FOLLOW_PLATFORMS]

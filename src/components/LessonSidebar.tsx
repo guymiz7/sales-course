@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
-import { RECOMMEND_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
 
 interface Part {
   id: string
@@ -212,8 +212,9 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       <div className="my-3 border-t border-gray-100" />
 
       {/* Lessons */}
-      <div className="flex items-center mb-2 px-2">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">שיעורים</p>
+      <div className="flex items-center gap-2 mb-2 px-2">
+        <span className="text-base">🎓</span>
+        <p className="text-sm font-bold text-gray-700">מרכז הלמידה</p>
       </div>
       <nav className="space-y-0.5">
         {hasGroups ? (
@@ -258,24 +259,46 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       </nav>
 
       {/* Recommend Guy — mobile only (shown in hamburger) */}
-      {!previewMode && socialLinks && RECOMMEND_PLATFORMS.some(p => socialLinks[p.key]) && (
-        <div className="mt-4 pt-4 border-t border-gray-100 md:hidden">
-          <p className="text-xs text-gray-400 px-2 mb-2">המלץ על גיא:</p>
-          <div className="space-y-0.5">
-            {RECOMMEND_PLATFORMS.filter(p => socialLinks[p.key]).map(p => (
-              <a
-                key={p.key}
-                href={socialLinks[p.key]!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
-              >
-                <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt="" className="w-4 h-4 shrink-0" />
-                <span>{p.label}</span>
-              </a>
-            ))}
-          </div>
-        </div>
+      {!previewMode && socialLinks && (
+        (() => {
+          const hasRecommend = socialLinks[RECOMMEND_PLATFORM.key]
+          const followLinks = FOLLOW_PLATFORMS.filter(p => socialLinks[p.key])
+          if (!hasRecommend && followLinks.length === 0) return null
+          return (
+            <div className="mt-4 pt-4 border-t border-gray-100 md:hidden space-y-2">
+              {hasRecommend && (
+                <a
+                  href={socialLinks[RECOMMEND_PLATFORM.key]!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 mx-2 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
+                >
+                  <img src={`https://www.google.com/s2/favicons?domain=${RECOMMEND_PLATFORM.domain}&sz=32`} alt="" className="w-4 h-4" />
+                  {RECOMMEND_PLATFORM.label}
+                </a>
+              )}
+              {followLinks.length > 0 && (
+                <>
+                  <p className="text-xs text-gray-400 px-2">עקוב אחרי גיא:</p>
+                  <div className="flex flex-wrap gap-1 px-2">
+                    {followLinks.map(p => (
+                      <a
+                        key={p.key}
+                        href={socialLinks[p.key]!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={p.label}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition"
+                      >
+                        <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt={p.label} className="w-4 h-4" />
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })()
       )}
     </>
   )
