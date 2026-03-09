@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import LessonSidebar from '@/components/LessonSidebar'
-import RecommendFooter from '@/components/RecommendFooter'
 
 export default async function LessonsLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -33,7 +32,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
 
   const { data: adminSettings } = await supabase
     .from('admin_settings')
-    .select('google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url')
+    .select('google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url')
     .eq('id', 1)
     .single()
 
@@ -62,9 +61,9 @@ export default async function LessonsLayout({ children }: { children: React.Reac
   const submittedFormIds = (submittedResponses || []).map(r => r.form_id as string)
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar userName={profile?.full_name || ''} role="student" courseName={courseName} />
-      <div className="flex flex-1 max-w-6xl mx-auto w-full">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar userName={profile?.full_name || ''} role="student" courseName={courseName} socialLinks={adminSettings || {}} />
+      <div className="flex max-w-6xl mx-auto">
         <LessonSidebar
           lessons={lessons || []}
           parts={parts || []}
@@ -74,10 +73,10 @@ export default async function LessonsLayout({ children }: { children: React.Reac
           submittedFormIds={submittedFormIds}
           avatarUrl={profile?.avatar_url}
           userName={profile?.full_name}
+          socialLinks={adminSettings || {}}
         />
         <main className="flex-1 p-4 md:p-6 min-w-0">{children}</main>
       </div>
-      <RecommendFooter links={adminSettings || {}} />
     </div>
   )
 }

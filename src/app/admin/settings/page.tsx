@@ -6,7 +6,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from('admin_settings')
-    .select('webhook_url, api_key, google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url')
+    .select('webhook_url, api_key, google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url')
     .eq('id', 1)
     .single()
 
@@ -26,6 +26,7 @@ export default async function SettingsPage() {
           linkedin_url: settings?.linkedin_url || '',
           youtube_url: settings?.youtube_url || '',
           tiktok_url: settings?.tiktok_url || '',
+          autotuesday_url: settings?.autotuesday_url || '',
         }}
       />
     </div>

@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
+import { RECOMMEND_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
 
 interface Part {
   id: string
@@ -33,9 +34,10 @@ interface Props {
   submittedFormIds?: string[]
   avatarUrl?: string | null
   userName?: string
+  socialLinks?: SocialLinks
 }
 
-export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds, avatarUrl, userName }: Props) {
+export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds, avatarUrl, userName, socialLinks }: Props) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
@@ -105,40 +107,113 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
 
   const hasGroups = groups.some(g => g.part !== null)
 
+  function SidebarLink({ href, icon, label, badge, exact }: { href: string; icon: string; label: string; badge?: React.ReactNode; exact?: boolean }) {
+    const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
+    return (
+      <Link
+        href={href}
+        onClick={() => setMobileOpen(false)}
+        className={clsx(
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
+          active ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+        )}
+      >
+        <span className={clsx(
+          'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
+          active ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
+        )}>
+          {icon}
+        </span>
+        <span className="flex-1 truncate">{label}</span>
+        {badge}
+      </Link>
+    )
+  }
+
   const sidebarContent = (
     <>
+      {/* Close button (mobile only) */}
+      <div className="flex items-center justify-end mb-2 md:hidden">
+        <button
+          className="text-gray-400 hover:text-gray-600 text-lg leading-none p-1"
+          onClick={() => setMobileOpen(false)}
+        >
+          ✕
+        </button>
+      </div>
+
       {/* Profile link */}
       {!previewMode && (
         <Link
           href="/lessons/profile"
           onClick={() => setMobileOpen(false)}
           className={clsx(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition mb-3',
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition mb-1',
             pathname === '/lessons/profile'
               ? 'bg-indigo-50 text-indigo-700 font-medium'
               : 'text-gray-700 hover:bg-gray-50'
           )}
         >
-          <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
             {avatarUrl
               ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              : <span className="text-gray-400 text-sm">👤</span>
+              : <span className="text-gray-400 text-xs">👤</span>
             }
           </div>
           <span className="flex-1 truncate">{userName || 'הפרופיל שלי'}</span>
         </Link>
       )}
 
-      <div className="flex items-center justify-between mb-3 px-2">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          שיעורים
-        </p>
-        <button
-          className="md:hidden text-gray-400 hover:text-gray-600 text-lg leading-none p-1"
+      {/* Community */}
+      {!previewMode && (
+        <SidebarLink href="/lessons/community" icon="👥" label="קהילה" />
+      )}
+
+      {/* Chat */}
+      {!previewMode && (
+        <SidebarLink href="/lessons/chat" icon="💬" label="צ'אט" />
+      )}
+
+      <div className="my-3 border-t border-gray-100" />
+
+      {/* Questions */}
+      {!previewMode && (
+        <>
+          <SidebarLink href="/lessons/questions" icon="?" label="שאלות" exact />
+          <SidebarLink href="/lessons/my-questions" icon="!" label="השאלות שלי" exact />
+        </>
+      )}
+
+      {/* Forms section */}
+      {!previewMode && forms && forms.length > 0 && (
+        <Link
+          href="/lessons/forms"
           onClick={() => setMobileOpen(false)}
+          className={clsx(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
+            pathname?.startsWith('/lessons/forms')
+              ? 'bg-indigo-50 text-indigo-700 font-medium'
+              : 'text-gray-700 hover:bg-gray-50'
+          )}
         >
-          ✕
-        </button>
+          <span className={clsx(
+            'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
+            pathname?.startsWith('/lessons/forms') ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
+          )}>
+            ✉
+          </span>
+          <span className="flex-1">טפסים</span>
+          <span className="text-xs text-gray-400 shrink-0">
+            {(submittedFormIds?.filter(id => forms.some(f => f.id === id)).length ?? 0)}/{forms.length}
+          </span>
+        </Link>
+      )}
+
+      <div className="my-3 border-t border-gray-100" />
+
+      {/* Lessons */}
+      <div className="flex items-center mb-2 px-2">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">שיעורים</p>
       </div>
       <nav className="space-y-0.5">
         {hasGroups ? (
@@ -182,54 +257,24 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
         )}
       </nav>
 
-      {/* All questions link */}
-      {!previewMode && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <Link
-            href="/lessons/questions"
-            onClick={() => setMobileOpen(false)}
-            className={clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
-              pathname === '/lessons/questions'
-                ? 'bg-indigo-50 text-indigo-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
-            )}
-          >
-            <span className={clsx(
-              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
-              pathname === '/lessons/questions' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
-            )}>
-              ?
-            </span>
-            <span>כל השאלות</span>
-          </Link>
-        </div>
-      )}
-
-      {/* Forms section */}
-      {forms && forms.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <Link
-            href="/lessons/forms"
-            onClick={() => setMobileOpen(false)}
-            className={clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
-              pathname?.startsWith('/lessons/forms')
-                ? 'bg-indigo-50 text-indigo-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
-            )}
-          >
-            <span className={clsx(
-              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
-              pathname?.startsWith('/lessons/forms') ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
-            )}>
-              ✉
-            </span>
-            <span className="flex-1">טפסים</span>
-            <span className="text-xs text-gray-400 shrink-0">
-              {(submittedFormIds?.filter(id => forms.some(f => f.id === id)).length ?? 0)}/{forms.length}
-            </span>
-          </Link>
+      {/* Recommend Guy — mobile only (shown in hamburger) */}
+      {!previewMode && socialLinks && RECOMMEND_PLATFORMS.some(p => socialLinks[p.key]) && (
+        <div className="mt-4 pt-4 border-t border-gray-100 md:hidden">
+          <p className="text-xs text-gray-400 px-2 mb-2">המלץ על גיא:</p>
+          <div className="space-y-0.5">
+            {RECOMMEND_PLATFORMS.filter(p => socialLinks[p.key]).map(p => (
+              <a
+                key={p.key}
+                href={socialLinks[p.key]!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt="" className="w-4 h-4 shrink-0" />
+                <span>{p.label}</span>
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </>

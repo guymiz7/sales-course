@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
+import { RECOMMEND_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
 
 interface NavbarProps {
   userName: string
@@ -9,9 +10,10 @@ interface NavbarProps {
   courseName?: string
   pendingCount?: number
   openQuestionsCount?: number
+  socialLinks?: SocialLinks
 }
 
-export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount }: NavbarProps) {
+export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount, socialLinks }: NavbarProps) {
   const pathname = usePathname()
 
   return (
@@ -22,7 +24,28 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
         {courseName && <span className="font-semibold text-gray-900 text-sm">{courseName}</span>}
       </Link>
 
-      {/* Center: navigation (admin only) */}
+      {/* Center: navigation (admin) or recommend links (student) */}
+      {role === 'student' && socialLinks && (
+        <nav className="hidden md:flex items-center gap-1">
+          <span className="text-xs text-gray-400 ml-1">המלץ על גיא:</span>
+          {RECOMMEND_PLATFORMS.filter(p => socialLinks[p.key]).map(p => (
+            <a
+              key={p.key}
+              href={socialLinks[p.key]!}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={p.label}
+              className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 transition"
+            >
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`}
+                alt={p.label}
+                className="w-4 h-4"
+              />
+            </a>
+          ))}
+        </nav>
+      )}
       {role === 'admin' && (
         <nav className="flex items-center gap-1">
           <NavLink href="/admin" label="שאלות" pathname={pathname} badge={openQuestionsCount} exact />

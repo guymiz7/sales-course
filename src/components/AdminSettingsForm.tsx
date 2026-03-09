@@ -9,6 +9,7 @@ interface SocialLinks {
   linkedin_url: string
   youtube_url: string
   tiktok_url: string
+  autotuesday_url: string
 }
 
 interface Props {
@@ -34,6 +35,7 @@ export default function AdminSettingsForm({ webhookUrl, apiKey, socialLinks: ini
       linkedin_url: social.linkedin_url || null,
       youtube_url: social.youtube_url || null,
       tiktok_url: social.tiktok_url || null,
+      autotuesday_url: social.autotuesday_url || null,
     }).eq('id', 1)
     setSocialSaved(true)
     setTimeout(() => setSocialSaved(false), 2000)
@@ -167,6 +169,7 @@ export default function AdminSettingsForm({ webhookUrl, apiKey, socialLinks: ini
             { key: 'linkedin_url', label: 'לינקדאין (עקוב)' },
             { key: 'youtube_url', label: 'יוטיוב (עקוב)' },
             { key: 'tiktok_url', label: 'טיקטוק (עקוב)' },
+            { key: 'autotuesday_url', label: 'Auto Tuesday' },
           ] as { key: keyof typeof social; label: string }[]).map(({ key, label }) => (
             <div key={key}>
               <label className="text-xs text-gray-500 block mb-1">{label}</label>
