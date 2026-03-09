@@ -116,8 +116,13 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
   }
 
   async function deleteStudent(userId: string, name: string) {
-    if (!window.confirm(`למחוק את "${name}" לגמרי מהמערכת?`)) return
-    await supabase.from('users').delete().eq('id', userId)
+    if (!window.confirm(`למחוק את "${name}" לגמרי מהמערכת? הפעולה בלתי הפיכה.`)) return
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    if (!res.ok) { alert('שגיאה במחיקה'); return }
     router.refresh()
   }
 
