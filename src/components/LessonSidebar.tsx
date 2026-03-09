@@ -1,9 +1,10 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { createClient } from '@/lib/supabase/client'
 
 interface Part {
   id: string
@@ -35,12 +36,57 @@ interface Props {
   avatarUrl?: string | null
   userName?: string
   socialLinks?: SocialLinks
+  userId?: string
+  cohortId?: string
 }
 
-export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds, avatarUrl, userName, socialLinks }: Props) {
+export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds, avatarUrl, userName, socialLinks, userId, cohortId }: Props) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [unreadPM, setUnreadPM] = useState(0)
+  const [unreadGroup, setUnreadGroup] = useState(0)
+
+  useEffect(() => {
+    if (!userId || !cohortId || previewMode) return
+    const supabase = createClient()
+
+    async function fetchPM() {
+      const { count } = await supabase
+        .from('private_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('receiver_id', userId!)
+        .is('read_at', null)
+      setUnreadPM(count || 0)
+    }
+
+    async function fetchGroup() {
+      const lastSeen = localStorage.getItem(`chat_last_seen_${cohortId}`) || '1970-01-01T00:00:00Z'
+      const { count } = await supabase
+        .from('chat_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('cohort_id', cohortId!)
+        .neq('user_id', userId!)
+        .gt('created_at', lastSeen)
+      setUnreadGroup(count || 0)
+    }
+
+    fetchPM()
+    fetchGroup()
+
+    const pmChannel = supabase.channel('sidebar_pm')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${userId}` }, fetchPM)
+      .subscribe()
+
+    const groupChannel = supabase.channel('sidebar_group')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `cohort_id=eq.${cohortId}` }, fetchGroup)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(pmChannel)
+      supabase.removeChannel(groupChannel)
+    }
+  }, [userId, cohortId])
 
   const maxViewedNumber = accessMode === 'sequential' && viewedLessonIds
     ? Math.max(0, ...lessons.filter(l => viewedLessonIds.includes(l.id)).map(l => l.number))
@@ -171,7 +217,18 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
 
       {/* Chat */}
       {!previewMode && (
-        <SidebarLink href="/lessons/chat" icon="💬" label="צ'אט" />
+        <SidebarLink
+          href="/lessons/chat"
+          icon="💬"
+          label="צ'אט"
+          badge={
+            (unreadGroup + unreadPM) > 0
+              ? <span className="text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] flex items-center justify-center px-0.5 leading-none shrink-0">
+                  {(unreadGroup + unreadPM) > 99 ? '99+' : unreadGroup + unreadPM}
+                </span>
+              : undefined
+          }
+        />
       )}
 
       <div className="my-3 border-t border-gray-100" />

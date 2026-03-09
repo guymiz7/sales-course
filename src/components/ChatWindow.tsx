@@ -27,6 +27,13 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const bottomRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  // Mark group chat as seen when opened and when new messages arrive
+  useEffect(() => {
+    if (cohortId) {
+      localStorage.setItem(`chat_last_seen_${cohortId}`, new Date().toISOString())
+    }
+  }, [messages, cohortId])
+
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

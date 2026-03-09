@@ -74,6 +74,8 @@ export default async function LessonsLayout({ children }: { children: React.Reac
           avatarUrl={profile?.avatar_url}
           userName={profile?.full_name}
           socialLinks={adminSettings || {}}
+          userId={user.id}
+          cohortId={studentCohortId}
         />
         <main className="flex-1 p-4 md:p-6 min-w-0">{children}</main>
       </div>
