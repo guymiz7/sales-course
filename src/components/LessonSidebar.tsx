@@ -248,7 +248,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
           icon="💬"
           label="צ'אט"
           badge={
-            (unreadGroup + unreadPM) > 0
+            !pathname?.startsWith('/lessons/chat') && (unreadGroup + unreadPM) > 0
               ? <span className="text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] flex items-center justify-center px-0.5 leading-none shrink-0">
                   {(unreadGroup + unreadPM) > 99 ? '99+' : unreadGroup + unreadPM}
                 </span>
