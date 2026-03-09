@@ -31,9 +31,11 @@ interface Props {
   accessMode?: 'open' | 'sequential'
   forms?: SidebarForm[]
   submittedFormIds?: string[]
+  avatarUrl?: string | null
+  userName?: string
 }
 
-export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds }: Props) {
+export default function LessonSidebar({ lessons, parts, previewMode, viewedLessonIds, accessMode, forms, submittedFormIds, avatarUrl, userName }: Props) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
@@ -105,6 +107,28 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
 
   const sidebarContent = (
     <>
+      {/* Profile link */}
+      {!previewMode && (
+        <Link
+          href="/lessons/profile"
+          onClick={() => setMobileOpen(false)}
+          className={clsx(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition mb-3',
+            pathname === '/lessons/profile'
+              ? 'bg-indigo-50 text-indigo-700 font-medium'
+              : 'text-gray-700 hover:bg-gray-50'
+          )}
+        >
+          <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+            {avatarUrl
+              ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              : <span className="text-gray-400 text-sm">👤</span>
+            }
+          </div>
+          <span className="flex-1 truncate">{userName || 'הפרופיל שלי'}</span>
+        </Link>
+      )}
+
       <div className="flex items-center justify-between mb-3 px-2">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
           שיעורים

@@ -10,7 +10,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
 
   // Fetch profile and cohort in parallel
   const [{ data: profile }, { data: cohortData }] = await Promise.all([
-    supabase.from('users').select('full_name, role').eq('id', user.id).single(),
+    supabase.from('users').select('full_name, role, avatar_url').eq('id', user.id).single(),
     supabase.from('user_cohorts')
       .select('cohort_id, access_mode, cohorts(course_id, access_mode, courses(name, access_mode))')
       .eq('user_id', user.id)
@@ -65,6 +65,8 @@ export default async function LessonsLayout({ children }: { children: React.Reac
           accessMode={effectiveMode}
           forms={forms || []}
           submittedFormIds={submittedFormIds}
+          avatarUrl={profile?.avatar_url}
+          userName={profile?.full_name}
         />
         <main className="flex-1 p-4 md:p-6 min-w-0">{children}</main>
       </div>
