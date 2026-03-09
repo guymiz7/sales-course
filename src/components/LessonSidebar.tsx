@@ -47,6 +47,15 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
   const [unreadPM, setUnreadPM] = useState(0)
   const [unreadGroup, setUnreadGroup] = useState(0)
 
+  // Clear badge immediately when user is on any chat page
+  useEffect(() => {
+    if (pathname?.startsWith('/lessons/chat')) {
+      if (cohortId) localStorage.setItem(`chat_last_seen_${cohortId}`, new Date().toISOString())
+      setUnreadGroup(0)
+      setUnreadPM(0)
+    }
+  }, [pathname, cohortId])
+
   useEffect(() => {
     if (!userId || !cohortId || previewMode) return
     const supabase = createClient()
