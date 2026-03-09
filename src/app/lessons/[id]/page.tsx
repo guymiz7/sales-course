@@ -6,7 +6,7 @@ import VideoPlayer from '@/components/VideoPlayer'
 import QuestionList from '@/components/QuestionList'
 import NewQuestionForm from '@/components/NewQuestionForm'
 import WatchTimeTracker from '@/components/WatchTimeTracker'
-import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
 
 function TextWithLinks({ text }: { text: string }) {
   const urlRegex = /(https?:\/\/[^\s]+)/g
@@ -98,7 +98,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
   ])
 
   const social = adminSettings as Record<string, string | null> | null
-  const hasRecommend = social?.[RECOMMEND_PLATFORM.key]
+  const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => social?.[p.key])
   const followLinks = FOLLOW_PLATFORMS.filter(p => social?.[p.key])
 
   return (
@@ -174,24 +174,25 @@ export default async function LessonPage({ params }: { params: { id: string } })
       )}
 
       {/* Recommend / Follow section */}
-      {(hasRecommend || followLinks.length > 0) && (
+      {(recommendLinks.length > 0 || followLinks.length > 0) && (
         <div className="mb-8 p-4 bg-gradient-to-l from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-800">נהנית מהשיעור? 🙏</p>
             <p className="text-xs text-gray-500 mt-0.5">המלצה שלך עוזרת לגיא להגיע לאנשים נוספים</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-center">
-            {hasRecommend && (
+            {recommendLinks.map(p => (
               <a
-                href={social![RECOMMEND_PLATFORM.key]!}
+                key={p.key}
+                href={social![p.key]!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
               >
-                <img src={`https://www.google.com/s2/favicons?domain=${RECOMMEND_PLATFORM.domain}&sz=32`} alt="" className="w-3.5 h-3.5" />
-                המלץ על גיא
+                <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt="" className="w-3.5 h-3.5" />
+                {p.label}
               </a>
-            )}
+            ))}
             {followLinks.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-400">עקוב:</span>

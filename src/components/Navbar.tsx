@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
-import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
 
 interface NavbarProps {
   userName: string
@@ -16,7 +16,7 @@ interface NavbarProps {
 export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount, socialLinks }: NavbarProps) {
   const pathname = usePathname()
 
-  const hasRecommend = socialLinks?.[RECOMMEND_PLATFORM.key]
+  const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => socialLinks?.[p.key])
   const followLinks = FOLLOW_PLATFORMS.filter(p => socialLinks?.[p.key])
 
   return (
@@ -28,20 +28,21 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
       </Link>
 
       {/* Center: recommend + follow (student) or nav (admin) */}
-      {role === 'student' && socialLinks && (hasRecommend || followLinks.length > 0) && (
-        <nav className="hidden md:flex items-center gap-3">
-          {/* Recommend button */}
-          {hasRecommend && (
+      {role === 'student' && socialLinks && (recommendLinks.length > 0 || followLinks.length > 0) && (
+        <nav className="hidden md:flex items-center gap-2">
+          {/* Recommend buttons */}
+          {recommendLinks.map(p => (
             <a
-              href={socialLinks[RECOMMEND_PLATFORM.key]!}
+              key={p.key}
+              href={socialLinks[p.key]!}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
             >
-              <img src={`https://www.google.com/s2/favicons?domain=${RECOMMEND_PLATFORM.domain}&sz=32`} alt="" className="w-3.5 h-3.5" />
-              {RECOMMEND_PLATFORM.label}
+              <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt="" className="w-3.5 h-3.5" />
+              {p.label}
             </a>
-          )}
+          ))}
 
           {/* Follow divider + icons */}
           {followLinks.length > 0 && (

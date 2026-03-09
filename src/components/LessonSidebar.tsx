@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
-import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
 import { createClient } from '@/lib/supabase/client'
 
 interface Part {
@@ -363,22 +363,23 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       {/* Recommend Guy — mobile only (shown in hamburger) */}
       {!previewMode && socialLinks && (
         (() => {
-          const hasRecommend = socialLinks[RECOMMEND_PLATFORM.key]
+          const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => socialLinks[p.key])
           const followLinks = FOLLOW_PLATFORMS.filter(p => socialLinks[p.key])
-          if (!hasRecommend && followLinks.length === 0) return null
+          if (recommendLinks.length === 0 && followLinks.length === 0) return null
           return (
             <div className="mt-4 pt-4 border-t border-gray-100 md:hidden space-y-2">
-              {hasRecommend && (
+              {recommendLinks.map(p => (
                 <a
-                  href={socialLinks[RECOMMEND_PLATFORM.key]!}
+                  key={p.key}
+                  href={socialLinks[p.key]!}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 mx-2 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
                 >
-                  <img src={`https://www.google.com/s2/favicons?domain=${RECOMMEND_PLATFORM.domain}&sz=32`} alt="" className="w-4 h-4" />
-                  {RECOMMEND_PLATFORM.label}
+                  <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt="" className="w-4 h-4" />
+                  {p.label}
                 </a>
-              )}
+              ))}
               {followLinks.length > 0 && (
                 <>
                   <p className="text-xs text-gray-400 px-2">עקוב אחרי גיא:</p>

@@ -8,16 +8,20 @@ export interface SocialLinks {
   autotuesday_url?: string | null
 }
 
-// The main "recommend" button (Google review)
+// "Recommend" buttons — shown as prominent buttons
 export const RECOMMEND_PLATFORM = {
   key: 'google_review_url' as keyof SocialLinks,
-  label: 'המלץ על גיא',
+  label: 'המלץ על גיא בגוגל',
   domain: 'google.com',
 }
 
+export const RECOMMEND_PLATFORMS_LIST = [
+  { key: 'google_review_url' as keyof SocialLinks, label: 'המלץ על גיא בגוגל', domain: 'google.com' },
+  { key: 'facebook_page_url' as keyof SocialLinks, label: 'המלץ על גיא בפייסבוק', domain: 'facebook.com' },
+]
+
 // "Follow" platforms shown as favicon icons
 export const FOLLOW_PLATFORMS = [
-  { key: 'facebook_page_url' as keyof SocialLinks, label: 'פייסבוק', domain: 'facebook.com' },
   { key: 'facebook_follow_url' as keyof SocialLinks, label: 'פייסבוק', domain: 'facebook.com' },
   { key: 'linkedin_url' as keyof SocialLinks, label: 'לינקדאין', domain: 'linkedin.com' },
   { key: 'youtube_url' as keyof SocialLinks, label: 'יוטיוב', domain: 'youtube.com' },
@@ -26,4 +30,4 @@ export const FOLLOW_PLATFORMS = [
 ]
 
 // All platforms combined (for backwards compat)
-export const RECOMMEND_PLATFORMS = [RECOMMEND_PLATFORM, ...FOLLOW_PLATFORMS]
+export const RECOMMEND_PLATFORMS = [...RECOMMEND_PLATFORMS_LIST, ...FOLLOW_PLATFORMS]

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
 
 interface Member {
   id: string
@@ -60,17 +60,18 @@ function MemberCard({ member, badge, currentUserId, adminSettings }: {
       {/* Admin follow links (from admin_settings) */}
       {isAdmin && adminSettings && (
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100">
-          {adminSettings[RECOMMEND_PLATFORM.key] && (
+          {RECOMMEND_PLATFORMS_LIST.filter(p => adminSettings[p.key]).map(p => (
             <a
-              href={adminSettings[RECOMMEND_PLATFORM.key]!}
+              key={p.key}
+              href={adminSettings[p.key]!}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
             >
-              <img src={`https://www.google.com/s2/favicons?domain=${RECOMMEND_PLATFORM.domain}&sz=32`} alt="" className="w-3 h-3" />
-              המלץ על גיא
+              <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt="" className="w-3 h-3" />
+              {p.label}
             </a>
-          )}
+          ))}
           {FOLLOW_PLATFORMS.filter(p => adminSettings[p.key]).map(p => (
             <a
               key={p.key}
