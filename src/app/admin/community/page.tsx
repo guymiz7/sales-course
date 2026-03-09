@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 interface Member {
   id: string
@@ -106,6 +107,16 @@ export default async function AdminCommunityPage() {
                   </a>
                 )}
               </div>
+            )}
+
+            {/* Chat button (not for admin) */}
+            {member.role !== 'admin' && (
+              <Link
+                href={`/admin/chat?dm=${member.id}`}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 rounded-lg text-sm transition border border-gray-200 hover:border-indigo-200"
+              >
+                💬 שלח הודעה
+              </Link>
             )}
           </div>
         ))}

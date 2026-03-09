@@ -28,12 +28,12 @@ export default async function ChatPage() {
     if (pm.sender_id !== user.id && !pm.read_at) convMap.get(otherId)!.unread++
   }
 
-  const otherIds = [...convMap.keys()]
+  const otherIds = Array.from(convMap.keys())
   const { data: otherUsers } = otherIds.length > 0
     ? await supabase.from('users').select('id, full_name, avatar_url, role').in('id', otherIds)
     : { data: [] }
 
-  const conversations = [...convMap.entries()].map(([userId, conv]) => {
+  const conversations = Array.from(convMap.entries()).map(([userId, conv]) => {
     const u = (otherUsers || []).find((u: any) => u.id === userId)
     return { userId, userName: u ? (u as any).full_name || '' : '', avatarUrl: u ? (u as any).avatar_url : null, role: u ? (u as any).role : null, ...conv }
   }).sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())

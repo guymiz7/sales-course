@@ -26,11 +26,12 @@ interface Props {
   initialGroupMessages: GroupMsg[]
   initialConversations: Conversation[]
   adminUser: { id: string; full_name: string | null; avatar_url: string | null } | null
+  initialDm?: string
 }
 
 export default function ChatHub({
   cohortId, currentUserId, currentUserName, currentUserAvatar, currentUserRole,
-  initialGroupMessages, initialConversations, adminUser
+  initialGroupMessages, initialConversations, adminUser, initialDm
 }: Props) {
   const [activeDm, setActiveDm] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations)
@@ -38,6 +39,12 @@ export default function ChatHub({
   const [loadingDm, setLoadingDm] = useState(false)
   const [showList, setShowList] = useState(true) // mobile: show list or chat
   const supabase = createClient()
+
+  // Auto-open DM if initialDm is provided
+  useEffect(() => {
+    if (initialDm) openDm(initialDm)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Realtime: update conversation list when new PM arrives
   useEffect(() => {

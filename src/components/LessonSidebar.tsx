@@ -198,7 +198,14 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       </div>
 
       {/* Profile link */}
-      {!previewMode && (
+      {previewMode ? (
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 mb-1">
+          <div className="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+            <span className="text-gray-400 text-xs">👤</span>
+          </div>
+          <span className="flex-1 truncate text-gray-400">פרופיל תלמיד</span>
+        </div>
+      ) : (
         <Link
           href="/lessons/profile"
           onClick={() => setMobileOpen(false)}
@@ -220,12 +227,22 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       )}
 
       {/* Community */}
-      {!previewMode && (
+      {previewMode ? (
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">👥</span>
+          <span>קהילה</span>
+        </div>
+      ) : (
         <SidebarLink href="/lessons/community" icon="👥" label="קהילה" />
       )}
 
       {/* Chat */}
-      {!previewMode && (
+      {previewMode ? (
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">💬</span>
+          <span>צ׳אט</span>
+        </div>
+      ) : (
         <SidebarLink
           href="/lessons/chat"
           icon="💬"
@@ -243,7 +260,18 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       <div className="my-3 border-t border-gray-100" />
 
       {/* Questions */}
-      {!previewMode && (
+      {previewMode ? (
+        <>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+            <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">?</span>
+            <span>שאלות</span>
+          </div>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+            <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">!</span>
+            <span>השאלות שלי</span>
+          </div>
+        </>
+      ) : (
         <>
           <SidebarLink href="/lessons/questions" icon="?" label="שאלות" exact />
           <SidebarLink href="/lessons/my-questions" icon="!" label="השאלות שלי" exact />
@@ -251,28 +279,36 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
       )}
 
       {/* Forms section */}
-      {!previewMode && forms && forms.length > 0 && (
-        <Link
-          href="/lessons/forms"
-          onClick={() => setMobileOpen(false)}
-          className={clsx(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
-            pathname?.startsWith('/lessons/forms')
-              ? 'bg-indigo-50 text-indigo-700 font-medium'
-              : 'text-gray-700 hover:bg-gray-50'
-          )}
-        >
-          <span className={clsx(
-            'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
-            pathname?.startsWith('/lessons/forms') ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
-          )}>
-            ✉
-          </span>
-          <span className="flex-1">טפסים</span>
-          <span className="text-xs text-gray-400 shrink-0">
-            {(submittedFormIds?.filter(id => forms.some(f => f.id === id)).length ?? 0)}/{forms.length}
-          </span>
-        </Link>
+      {forms && forms.length > 0 && (
+        previewMode ? (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+            <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">✉</span>
+            <span className="flex-1">טפסים</span>
+            <span className="text-xs text-gray-400 shrink-0">0/{forms.length}</span>
+          </div>
+        ) : (
+          <Link
+            href="/lessons/forms"
+            onClick={() => setMobileOpen(false)}
+            className={clsx(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
+              pathname?.startsWith('/lessons/forms')
+                ? 'bg-indigo-50 text-indigo-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            )}
+          >
+            <span className={clsx(
+              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
+              pathname?.startsWith('/lessons/forms') ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
+            )}>
+              ✉
+            </span>
+            <span className="flex-1">טפסים</span>
+            <span className="text-xs text-gray-400 shrink-0">
+              {(submittedFormIds?.filter(id => forms.some(f => f.id === id)).length ?? 0)}/{forms.length}
+            </span>
+          </Link>
+        )
       )}
 
       <div className="my-3 border-t border-gray-100" />
