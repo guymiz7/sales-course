@@ -33,7 +33,7 @@ export default async function LessonsLayout({ children }: { children: React.Reac
 
   const { data: adminSettings } = await supabase
     .from('admin_settings')
-    .select('google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url')
+    .select('google_review_url, facebook_page_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url')
     .eq('id', 1)
     .single()
 

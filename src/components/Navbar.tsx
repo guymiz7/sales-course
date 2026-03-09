@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
 import { createClient } from '@/lib/supabase/client'
@@ -18,11 +18,20 @@ interface NavbarProps {
 
 export default function Navbar({ userName, role, courseName, pendingCount, openQuestionsCount, socialLinks, userId }: NavbarProps) {
   const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [adminChatUnread, setAdminChatUnread] = useState(0)
 
   const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => socialLinks?.[p.key])
   const followLinks = FOLLOW_PLATFORMS.filter(p => socialLinks?.[p.key])
+
+  // Admin: clear badge when on chat page
+  useEffect(() => {
+    if (role === 'admin' && pathname.startsWith('/admin/chat')) {
+      setAdminChatUnread(0)
+    }
+  }, [pathname, role])
 
   // Admin: live unread PM badge
   useEffect(() => {
@@ -35,13 +44,15 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
         .select('id', { count: 'exact', head: true })
         .eq('receiver_id', userId!)
         .is('read_at', null)
-      setAdminChatUnread(count || 0)
+      if (!pathnameRef.current.startsWith('/admin/chat')) {
+        setAdminChatUnread(count || 0)
+      }
     }
 
     fetchUnread()
 
     const channel = supabase.channel('admin_navbar_pm')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${userId}` }, fetchUnread)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${userId}` }, fetchUnread)
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -58,7 +69,7 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
     { href: '/admin/students', label: 'תלמידים' },
     { href: '/admin/forms', label: 'טפסים' },
     { href: '/admin/community', label: 'קהילה' },
-    { href: '/admin/chat', label: 'צ׳אט', badge: adminChatUnread },
+    { href: '/admin/chat', label: 'צ׳אט', badge: pathname.startsWith('/admin/chat') ? 0 : adminChatUnread },
     { href: '/admin/settings', label: 'הגדרות' },
   ]
 
@@ -138,7 +149,7 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
             <span className="w-5 h-0.5 bg-gray-600 block" />
             <span className="w-5 h-0.5 bg-gray-600 block" />
             <span className="w-5 h-0.5 bg-gray-600 block" />
-            {(adminChatUnread > 0 || (pendingCount || 0) > 0 || (openQuestionsCount || 0) > 0) && (
+            {((!pathname.startsWith('/admin/chat') && adminChatUnread > 0) || (pendingCount || 0) > 0 || (openQuestionsCount || 0) > 0) && (
               <span className="absolute top-2 left-4 w-2 h-2 bg-red-500 rounded-full" />
             )}
           </button>

@@ -90,7 +90,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
     fetchGroup()
 
     const pmChannel = supabase.channel('sidebar_pm')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${userId}` }, fetchPM)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${userId}` }, fetchPM)
       .subscribe()
 
     const groupChannel = supabase.channel('sidebar_group')

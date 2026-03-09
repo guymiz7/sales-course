@@ -94,7 +94,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
       .eq('lesson_id', lesson.id)
       .eq('cohort_id', cohortId || '')
       .order('created_at', { ascending: false }),
-    supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
+    supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
   ])
 
   const social = adminSettings as Record<string, string | null> | null
