@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
+import { RECOMMEND_PLATFORM, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
 
 interface Member {
   id: string
@@ -15,9 +17,18 @@ interface Member {
   role?: string | null
 }
 
-function MemberCard({ member, badge }: { member: Member; badge?: string }) {
+function MemberCard({ member, badge, currentUserId, adminSettings }: {
+  member: Member
+  badge?: string
+  currentUserId: string
+  adminSettings?: Record<string, string | null>
+}) {
+  const isAdmin = member.role === 'admin'
+  const isSelf = member.id === currentUserId
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col gap-3">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
           {member.avatar_url
@@ -25,19 +36,16 @@ function MemberCard({ member, badge }: { member: Member; badge?: string }) {
             : <span className="text-gray-400 text-xl">👤</span>
           }
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-gray-900 truncate">{member.full_name || 'חבר קהילה'}</p>
-            {badge && (
-              <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full shrink-0">{badge}</span>
-            )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-gray-900">{member.full_name || 'חבר קהילה'}</p>
+            {badge && <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full shrink-0">{badge}</span>}
           </div>
-          {member.bio && (
-            <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{member.bio}</p>
-          )}
+          {member.bio && <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{member.bio}</p>}
         </div>
       </div>
 
+      {/* Tags */}
       {((member.systems && member.systems.length > 0) || (member.niches && member.niches.length > 0)) && (
         <div className="flex flex-wrap gap-1">
           {(member.systems || []).slice(0, 3).map(s => (
@@ -49,7 +57,37 @@ function MemberCard({ member, badge }: { member: Member; badge?: string }) {
         </div>
       )}
 
-      {(member.website_url || member.facebook_url || member.instagram_url || member.linkedin_url) && (
+      {/* Admin follow links (from admin_settings) */}
+      {isAdmin && adminSettings && (
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100">
+          {adminSettings[RECOMMEND_PLATFORM.key] && (
+            <a
+              href={adminSettings[RECOMMEND_PLATFORM.key]!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
+            >
+              <img src={`https://www.google.com/s2/favicons?domain=${RECOMMEND_PLATFORM.domain}&sz=32`} alt="" className="w-3 h-3" />
+              המלץ על גיא
+            </a>
+          )}
+          {FOLLOW_PLATFORMS.filter(p => adminSettings[p.key]).map(p => (
+            <a
+              key={p.key}
+              href={adminSettings[p.key]!}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={p.label}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition"
+            >
+              <img src={`https://www.google.com/s2/favicons?domain=${p.domain}&sz=32`} alt={p.label} className="w-4 h-4" />
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Personal social links (non-admin) */}
+      {!isAdmin && (member.website_url || member.facebook_url || member.instagram_url || member.linkedin_url) && (
         <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
           {member.linkedin_url && (
             <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer">
@@ -67,11 +105,19 @@ function MemberCard({ member, badge }: { member: Member; badge?: string }) {
             </a>
           )}
           {member.website_url && (
-            <a href={member.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">
-              אתר
-            </a>
+            <a href={member.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">אתר</a>
           )}
         </div>
+      )}
+
+      {/* Chat button — not for self */}
+      {!isSelf && (
+        <Link
+          href={`/lessons/chat/${member.id}`}
+          className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 rounded-lg text-sm transition border border-gray-200 hover:border-indigo-200"
+        >
+          💬 שלח הודעה
+        </Link>
       )}
     </div>
   )
@@ -90,41 +136,20 @@ export default async function CommunityPage() {
 
   const cohortId = cohortData?.cohort_id
 
-  // Fetch current user's profile
-  const { data: me } = await supabase
-    .from('users')
-    .select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role')
-    .eq('id', user.id)
-    .single()
+  const [{ data: me }, { data: admins }, { data: cohortUsers }, { data: others }, { data: adminSettings }] = await Promise.all([
+    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('id', user.id).single(),
+    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('role', 'admin'),
+    cohortId ? supabase.from('user_cohorts').select('user_id').eq('cohort_id', cohortId) : Promise.resolve({ data: [] as any[] }),
+    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').neq('id', user.id).neq('role', 'admin').in('profile_visibility', ['cohort', 'course', 'community']),
+    supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
+  ])
 
-  // Fetch admin user (always shown first)
-  const { data: admins } = await supabase
-    .from('users')
-    .select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role')
-    .eq('role', 'admin')
-
-  // Fetch all cohort members with visible profiles (excluding self and admins)
-  let cohortMemberIds: string[] = []
-  if (cohortId) {
-    const { data: cohortUsers } = await supabase
-      .from('user_cohorts')
-      .select('user_id')
-      .eq('cohort_id', cohortId)
-    cohortMemberIds = (cohortUsers || []).map(u => u.user_id)
-  }
-
-  const { data: others } = await supabase
-    .from('users')
-    .select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role')
-    .neq('id', user.id)
-    .neq('role', 'admin')
-    .in('profile_visibility', ['cohort', 'course', 'community'])
-
-  const visibleOthers = (others || []).filter(m => cohortMemberIds.includes(m.id))
-
+  const cohortMemberIds = new Set((cohortUsers || []).map((u: any) => u.user_id as string))
+  const visibleOthers = (others || []).filter((m: any) => cohortMemberIds.has(m.id)) as Member[]
   const adminList = (admins || []) as Member[]
   const selfMember = me as Member | null
   const isSelfAdmin = me?.role === 'admin'
+  const settings = adminSettings as Record<string, string | null> | null
 
   return (
     <div className="max-w-4xl">
@@ -134,29 +159,20 @@ export default async function CommunityPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Admin always first */}
         {adminList.map(admin => (
-          <MemberCard key={admin.id} member={admin} badge="מרצה" />
+          <MemberCard key={admin.id} member={admin} badge="מרצה" currentUserId={user.id} adminSettings={settings || {}} />
         ))}
-
-        {/* Current user (so they see how they look) — if not admin */}
         {selfMember && !isSelfAdmin && (
-          <MemberCard
-            key={selfMember.id}
-            member={selfMember}
-            badge="אתה"
-          />
+          <MemberCard key={selfMember.id} member={selfMember} badge="אתה" currentUserId={user.id} />
         )}
-
-        {/* Other visible members */}
         {visibleOthers.map(member => (
-          <MemberCard key={member.id} member={member as Member} />
+          <MemberCard key={member.id} member={member} currentUserId={user.id} />
         ))}
       </div>
 
       {visibleOthers.length === 0 && !isSelfAdmin && (
         <p className="text-xs text-gray-400 text-center mt-6">
-          אין חברים נוספים גלויים בקהילה עדיין — ניתן לשנות את הגדרות הפרופיל כדי להיות גלוי לאחרים
+          אין חברים נוספים גלויים — ניתן לשנות הגדרות פרופיל כדי להיות גלוי לאחרים
         </p>
       )}
     </div>
