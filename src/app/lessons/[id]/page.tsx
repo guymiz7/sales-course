@@ -6,7 +6,7 @@ import VideoPlayer from '@/components/VideoPlayer'
 import QuestionList from '@/components/QuestionList'
 import NewQuestionForm from '@/components/NewQuestionForm'
 import WatchTimeTracker from '@/components/WatchTimeTracker'
-import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, safeUrl } from '@/lib/recommendPlatforms'
 
 function TextWithLinks({ text }: { text: string }) {
   const urlRegex = /(https?:\/\/[^\s]+)/g
@@ -184,7 +184,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
             {recommendLinks.map(p => (
               <a
                 key={p.key}
-                href={social![p.key]!}
+                href={safeUrl(social![p.key])!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
@@ -199,7 +199,7 @@ export default async function LessonPage({ params }: { params: { id: string } })
                 {followLinks.map(p => (
                   <a
                     key={p.key}
-                    href={social![p.key]!}
+                    href={safeUrl(social![p.key])!}
                     target="_blank"
                     rel="noopener noreferrer"
                     title={p.label}

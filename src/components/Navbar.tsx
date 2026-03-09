@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import clsx from 'clsx'
-import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks, safeUrl } from '@/lib/recommendPlatforms'
 import { createClient } from '@/lib/supabase/client'
 
 interface NavbarProps {
@@ -87,7 +87,7 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
           {recommendLinks.map(p => (
             <a
               key={p.key}
-              href={socialLinks[p.key]!}
+              href={safeUrl(socialLinks[p.key])!}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
@@ -102,7 +102,7 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
               {followLinks.map(p => (
                 <a
                   key={p.key}
-                  href={socialLinks[p.key]!}
+                  href={safeUrl(socialLinks[p.key])!}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={p.label}

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
-import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, SocialLinks, safeUrl } from '@/lib/recommendPlatforms'
 import { createClient } from '@/lib/supabase/client'
 
 interface Part {
@@ -49,14 +49,22 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
   const [unreadPM, setUnreadPM] = useState(0)
   const [unreadGroup, setUnreadGroup] = useState(0)
 
-  // Clear badge immediately when user is on any chat page
+  // Clear badge immediately when user is on any chat page + mark PMs as read in DB
   useEffect(() => {
     if (pathname?.startsWith('/lessons/chat')) {
       if (cohortId) localStorage.setItem(`chat_last_seen_${cohortId}`, new Date().toISOString())
       setUnreadGroup(0)
       setUnreadPM(0)
+      if (userId) {
+        const supabase = createClient()
+        supabase.from('private_messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('receiver_id', userId)
+          .is('read_at', null)
+          .then(() => {})
+      }
     }
-  }, [pathname, cohortId])
+  }, [pathname, cohortId, userId])
 
   useEffect(() => {
     if (!userId || !cohortId || previewMode) return
@@ -377,7 +385,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
               {recommendLinks.map(p => (
                 <a
                   key={p.key}
-                  href={socialLinks[p.key]!}
+                  href={safeUrl(socialLinks[p.key])!}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 mx-2 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
@@ -393,7 +401,7 @@ export default function LessonSidebar({ lessons, parts, previewMode, viewedLesso
                     {followLinks.map(p => (
                       <a
                         key={p.key}
-                        href={socialLinks[p.key]!}
+                        href={safeUrl(socialLinks[p.key])!}
                         target="_blank"
                         rel="noopener noreferrer"
                         title={p.label}

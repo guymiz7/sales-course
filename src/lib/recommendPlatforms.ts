@@ -33,3 +33,10 @@ export const FOLLOW_PLATFORMS = [
 
 // All platforms combined (for backwards compat)
 export const RECOMMEND_PLATFORMS = [...RECOMMEND_PLATFORMS_LIST, ...FOLLOW_PLATFORMS]
+
+// Ensure URL has a protocol prefix so it's not treated as a relative path
+export function safeUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return 'https://' + url
+}
