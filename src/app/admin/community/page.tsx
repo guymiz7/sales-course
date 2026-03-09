@@ -11,6 +11,7 @@ interface Member {
   facebook_url: string | null
   instagram_url: string | null
   linkedin_url: string | null
+  phone: string | null
   profile_visibility: string | null
   role: string | null
 }
@@ -20,7 +21,7 @@ export default async function AdminCommunityPage() {
 
   const { data: members } = await supabase
     .from('users')
-    .select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role')
+    .select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, phone, profile_visibility, role')
     .neq('role', 'pending')
     .order('role', { ascending: false }) // admin first
 
@@ -36,6 +37,7 @@ export default async function AdminCommunityPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {all.map(member => (
           <div key={member.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col gap-3">
+            {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
                 {member.avatar_url
@@ -44,30 +46,65 @@ export default async function AdminCommunityPage() {
                 }
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-gray-900 truncate">{member.full_name || 'משתמש'}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-gray-900">{member.full_name || 'משתמש'}</p>
                   {member.role === 'admin' && (
                     <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full shrink-0">מרצה</span>
                   )}
+                  <span className="text-xs text-gray-400">
+                    {member.profile_visibility === 'private' ? '🔒'
+                      : member.profile_visibility === 'cohort' ? '👥'
+                      : member.profile_visibility === 'course' ? '📚'
+                      : member.profile_visibility === 'community' ? '🌐'
+                      : '—'}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-400">
-                  {member.profile_visibility === 'private' ? '🔒 פרטי'
-                    : member.profile_visibility === 'cohort' ? '👥 גלוי למחזור'
-                    : member.profile_visibility === 'course' ? '📚 גלוי לקורס'
-                    : member.profile_visibility === 'community' ? '🌐 גלוי לקהילה'
-                    : '—'}
-                </p>
-                {member.bio && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{member.bio}</p>}
+                {member.phone && (
+                  <p className="text-xs text-gray-500 mt-0.5" dir="ltr">{member.phone}</p>
+                )}
               </div>
             </div>
+
+            {/* Bio */}
+            {member.bio && (
+              <p className="text-xs text-gray-600 leading-relaxed">{member.bio}</p>
+            )}
+
+            {/* Tags */}
             {((member.systems && member.systems.length > 0) || (member.niches && member.niches.length > 0)) && (
               <div className="flex flex-wrap gap-1">
-                {(member.systems || []).slice(0, 3).map(s => (
+                {(member.systems || []).map(s => (
                   <span key={s} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{s}</span>
                 ))}
-                {(member.niches || []).slice(0, 3).map(n => (
+                {(member.niches || []).map(n => (
                   <span key={n} className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{n}</span>
                 ))}
+              </div>
+            )}
+
+            {/* Links */}
+            {(member.website_url || member.facebook_url || member.instagram_url || member.linkedin_url) && (
+              <div className="flex items-center gap-2 pt-1 border-t border-gray-100 flex-wrap">
+                {member.website_url && (
+                  <a href={member.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline truncate max-w-[120px]">
+                    🌐 {member.website_url.replace(/^https?:\/\//, '')}
+                  </a>
+                )}
+                {member.linkedin_url && (
+                  <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer" title="LinkedIn">
+                    <img src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=32" alt="LinkedIn" className="w-4 h-4" />
+                  </a>
+                )}
+                {member.facebook_url && (
+                  <a href={member.facebook_url} target="_blank" rel="noopener noreferrer" title="Facebook">
+                    <img src="https://www.google.com/s2/favicons?domain=facebook.com&sz=32" alt="Facebook" className="w-4 h-4" />
+                  </a>
+                )}
+                {member.instagram_url && (
+                  <a href={member.instagram_url} target="_blank" rel="noopener noreferrer" title="Instagram">
+                    <img src="https://www.google.com/s2/favicons?domain=instagram.com&sz=32" alt="Instagram" className="w-4 h-4" />
+                  </a>
+                )}
               </div>
             )}
           </div>
