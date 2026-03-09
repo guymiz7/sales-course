@@ -6,7 +6,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from('admin_settings')
-    .select('webhook_url, api_key')
+    .select('webhook_url, api_key, google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url')
     .eq('id', 1)
     .single()
 
@@ -19,6 +19,14 @@ export default async function SettingsPage() {
       <AdminSettingsForm
         webhookUrl={settings?.webhook_url || null}
         apiKey={settings?.api_key || ''}
+        socialLinks={{
+          google_review_url: settings?.google_review_url || '',
+          facebook_page_url: settings?.facebook_page_url || '',
+          facebook_follow_url: settings?.facebook_follow_url || '',
+          linkedin_url: settings?.linkedin_url || '',
+          youtube_url: settings?.youtube_url || '',
+          tiktok_url: settings?.tiktok_url || '',
+        }}
       />
     </div>
   )
