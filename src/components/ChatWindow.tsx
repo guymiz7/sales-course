@@ -25,6 +25,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
   // Mark group chat as seen when opened and when new messages arrive
@@ -34,9 +35,10 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
     }
   }, [messages, cohortId])
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages (within container only — no page scroll)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages])
 
   // Realtime subscription
@@ -101,7 +103,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   return (
     <div className="flex flex-col flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 text-sm py-12">אין הודעות עדיין. היה הראשון לכתוב! 👋</p>
         )}

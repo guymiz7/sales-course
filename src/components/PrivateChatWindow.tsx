@@ -26,10 +26,13 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  // Scroll within container only — no page scroll
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages])
 
   // Mark messages as read
@@ -93,7 +96,7 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 text-sm py-12">אין הודעות עדיין — שלח הודעה ראשונה! 👋</p>
         )}
