@@ -171,16 +171,16 @@ export default function AdminStudentEditForm({ student, cohorts, allCohorts }: P
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-gray-800">קישורים חברתיים</h2>
         <Field label="אתר אישי">
-          <input value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://..." dir="ltr" className={inputCls} />
+          <input value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://..." dir="ltr" autoComplete="off" className={inputCls} />
         </Field>
         <Field label="פייסבוק">
-          <input value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." dir="ltr" className={inputCls} />
+          <input value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." dir="ltr" autoComplete="off" className={inputCls} />
         </Field>
         <Field label="אינסטגרם">
-          <input value={instagramUrl} onChange={e => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." dir="ltr" className={inputCls} />
+          <input value={instagramUrl} onChange={e => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." dir="ltr" autoComplete="off" className={inputCls} />
         </Field>
         <Field label="לינקדאין">
-          <input value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/..." dir="ltr" className={inputCls} />
+          <input value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/..." dir="ltr" autoComplete="off" className={inputCls} />
         </Field>
       </section>
 
