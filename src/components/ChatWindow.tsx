@@ -13,6 +13,8 @@ interface ChatMessage {
   users: { full_name: string | null; avatar_url: string | null; role: string | null } | null
 }
 
+type UserInfo = { full_name: string | null; avatar_url: string | null; role: string | null }
+
 interface Props {
   cohortId: string
   currentUserId: string
@@ -21,6 +23,20 @@ interface Props {
   currentUserRole: 'admin' | 'student'
   initialMessages: ChatMessage[]
   onOpenDm?: (userId: string) => void
+}
+
+// Generate a consistent subtle pastel color from user ID
+function getUserColor(userId: string): { bg: string; border: string } {
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i)
+    hash = hash & hash
+  }
+  const hue = Math.abs(hash) % 360
+  return {
+    bg: `hsl(${hue}, 38%, 93%)`,
+    border: `hsl(${hue}, 38%, 83%)`,
+  }
 }
 
 export default function ChatWindow({ cohortId, currentUserId, currentUserName, currentUserAvatar, currentUserRole, initialMessages, onOpenDm }: Props) {
@@ -32,7 +48,18 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Cache user info so realtime messages always show names
+  const userCacheRef = useRef<Record<string, UserInfo>>({})
   const supabase = createClient()
+
+  // Seed cache from initial messages
+  useEffect(() => {
+    for (const msg of initialMessages) {
+      if (msg.user_id && msg.users) {
+        userCacheRef.current[msg.user_id] = msg.users
+      }
+    }
+  }, [])
 
   // Mark group chat as seen
   useEffect(() => {
@@ -54,12 +81,35 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `cohort_id=eq.${cohortId}` },
         async (payload) => {
-          const { data } = await supabase
-            .from('chat_messages')
-            .select('id, content, created_at, user_id, attachment_url, attachment_type, users(full_name, avatar_url, role)')
-            .eq('id', payload.new.id)
-            .single()
-          if (data) setMessages(prev => [...prev, data as any])
+          const p = payload.new as any
+          let userInfo: UserInfo | null = userCacheRef.current[p.user_id] || null
+
+          // If not in cache, fetch via API (bypasses RLS)
+          if (!userInfo) {
+            try {
+              const res = await fetch('/api/users/names', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [p.user_id] }),
+              })
+              const json = await res.json()
+              if (json.users?.[0]) {
+                userInfo = { full_name: json.users[0].full_name, avatar_url: json.users[0].avatar_url, role: json.users[0].role }
+                userCacheRef.current[p.user_id] = userInfo
+              }
+            } catch {}
+          }
+
+          const msg: ChatMessage = {
+            id: p.id,
+            content: p.content,
+            created_at: p.created_at,
+            user_id: p.user_id,
+            attachment_url: p.attachment_url,
+            attachment_type: p.attachment_type,
+            users: userInfo,
+          }
+          setMessages(prev => [...prev, msg])
         }
       )
       .subscribe()
@@ -168,6 +218,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
               const prevMsg = group.msgs[i - 1]
               const showAvatar = !prevMsg || prevMsg.user_id !== msg.user_id
               const isAdmin = msg.users?.role === 'admin'
+              const userColor = (!isMine && !isAdmin) ? getUserColor(msg.user_id) : null
 
               return (
                 <div key={msg.id} className={clsx('flex items-end gap-2 mb-0.5', isMine ? 'flex-row-reverse' : 'flex-row')}>
@@ -187,30 +238,33 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                     {showAvatar && (
                       <span className={clsx('text-xs mb-0.5 flex items-center gap-1', isMine ? 'text-right' : 'text-left')}>
                         {isMine ? (
-                          <span className="font-medium text-gray-600">אתה</span>
+                          <span className="font-medium text-gray-500">אתה</span>
                         ) : onOpenDm ? (
                           <button
                             onClick={() => onOpenDm(msg.user_id)}
-                            className={clsx('font-medium hover:underline cursor-pointer', isAdmin ? 'text-indigo-600' : 'text-gray-600')}
+                            className={clsx('font-medium hover:underline cursor-pointer', isAdmin ? 'text-indigo-600' : 'text-gray-700')}
                           >
                             {msg.users?.full_name || 'חבר קהילה'}
                           </button>
                         ) : (
-                          <span className={clsx('font-medium', isAdmin ? 'text-indigo-600' : 'text-gray-600')}>
+                          <span className={clsx('font-medium', isAdmin ? 'text-indigo-600' : 'text-gray-700')}>
                             {msg.users?.full_name || 'חבר קהילה'}
                           </span>
                         )}
                         {isAdmin && <span className="text-xs bg-indigo-100 text-indigo-600 px-1 rounded">מרצה</span>}
                       </span>
                     )}
-                    <div className={clsx(
-                      'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words',
-                      isMine
-                        ? 'bg-indigo-600 text-white rounded-br-sm'
-                        : isAdmin
-                          ? 'bg-indigo-50 text-gray-900 border border-indigo-100 rounded-bl-sm'
-                          : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                    )}>
+                    <div
+                      className={clsx(
+                        'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words',
+                        isMine
+                          ? 'bg-indigo-600 text-white rounded-br-sm'
+                          : isAdmin
+                            ? 'bg-indigo-50 text-gray-900 border border-indigo-100 rounded-bl-sm'
+                            : 'text-gray-900 rounded-bl-sm border'
+                      )}
+                      style={userColor ? { backgroundColor: userColor.bg, borderColor: userColor.border } : undefined}
+                    >
                       {msg.content && <span>{msg.content}</span>}
                       {msg.attachment_url && (
                         msg.attachment_type === 'image'

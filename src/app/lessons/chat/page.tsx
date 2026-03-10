@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import ChatHub from '@/components/ChatHub'
 
 export default async function ChatPage() {
@@ -14,9 +15,10 @@ export default async function ChatPage() {
 
   const cohortId = cohortData?.cohort_id || ''
 
+  const adminSupabase = createAdminClient()
   const [{ data: groupMessages }, { data: allPMs }] = await Promise.all([
     cohortId
-      ? supabase.from('chat_messages').select('id, content, created_at, user_id, attachment_url, attachment_type, users(full_name, avatar_url, role)').eq('cohort_id', cohortId).order('created_at', { ascending: true }).limit(200)
+      ? adminSupabase.from('chat_messages').select('id, content, created_at, user_id, attachment_url, attachment_type, users(full_name, avatar_url, role)').eq('cohort_id', cohortId).order('created_at', { ascending: true }).limit(200)
       : Promise.resolve({ data: [] }),
     supabase.from('private_messages').select('id, content, created_at, sender_id, receiver_id, read_at').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order('created_at', { ascending: false }),
   ])
