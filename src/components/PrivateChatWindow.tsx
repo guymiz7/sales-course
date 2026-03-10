@@ -9,6 +9,8 @@ interface PM {
   created_at: string
   sender_id: string
   read_at: string | null
+  attachment_url?: string | null
+  attachment_type?: string | null
 }
 
 interface Props {
@@ -25,11 +27,13 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
   const [messages, setMessages] = useState<PM[]>(initialMessages)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  // Scroll within container only — no page scroll
   useEffect(() => {
     const el = scrollContainerRef.current
     if (el) el.scrollTop = el.scrollHeight
@@ -62,12 +66,67 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  async function uploadFile(file: File): Promise<{ url: string; type: string } | null> {
+    const ext = file.name.split('.').pop() || 'bin'
+    const filePath = `pm/${[currentUserId, otherUserId].sort().join('_')}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error } = await supabase.storage.from('chat-files').upload(filePath, file)
+    if (error) { alert('שגיאה בהעלאת הקובץ: ' + error.message); return null }
+    const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath)
+    return { url: data.publicUrl, type: file.type.startsWith('image/') ? 'image' : 'file' }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPendingFile(file)
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = ev => setPendingPreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setPendingPreview(null)
+    }
+    e.target.value = ''
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const items = Array.from(e.clipboardData.items)
+    const imageItem = items.find(item => item.type.startsWith('image/'))
+    if (imageItem) {
+      e.preventDefault()
+      const file = imageItem.getAsFile()
+      if (file) {
+        setPendingFile(file)
+        const reader = new FileReader()
+        reader.onload = ev => setPendingPreview(ev.target?.result as string)
+        reader.readAsDataURL(file)
+      }
+    }
+  }
+
+  function clearPending() {
+    setPendingFile(null)
+    setPendingPreview(null)
+  }
+
   async function send() {
     const content = text.trim()
-    if (!content || sending) return
+    if ((!content && !pendingFile) || sending) return
     setSending(true)
+    const msgText = content
+    const fileToSend = pendingFile
     setText('')
-    await supabase.from('private_messages').insert({ sender_id: currentUserId, receiver_id: otherUserId, content })
+    clearPending()
+
+    let attachment: { url: string; type: string } | null = null
+    if (fileToSend) attachment = await uploadFile(fileToSend)
+
+    await supabase.from('private_messages').insert({
+      sender_id: currentUserId,
+      receiver_id: otherUserId,
+      content: msgText,
+      ...(attachment && { attachment_url: attachment.url, attachment_type: attachment.type }),
+    })
     setSending(false)
   }
 
@@ -114,7 +173,12 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
                   'max-w-[75%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words',
                   isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                 )}>
-                  {msg.content}
+                  {msg.content && <span>{msg.content}</span>}
+                  {msg.attachment_url && (
+                    msg.attachment_type === 'image'
+                      ? <img src={msg.attachment_url} alt="תמונה מצורפת" className="max-w-full rounded-lg mt-1 max-h-64 object-contain cursor-pointer" onClick={() => window.open(msg.attachment_url!, '_blank')} />
+                      : <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className={clsx('flex items-center gap-1 text-xs underline mt-1', isMine ? 'text-indigo-200' : 'text-indigo-600')}>📎 קובץ מצורף</a>
+                  )}
                 </div>
               </div>
             </div>
@@ -123,12 +187,32 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
         <div ref={bottomRef} />
       </div>
 
+      {/* Pending attachment preview */}
+      {pendingFile && (
+        <div className="border-t border-gray-100 px-3 pt-2 flex items-center gap-2">
+          {pendingPreview
+            ? <img src={pendingPreview} alt="" className="h-16 rounded-lg object-cover border border-gray-200" />
+            : <div className="flex items-center gap-1 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">📎 {pendingFile.name}</div>
+          }
+          <button onClick={clearPending} className="text-gray-400 hover:text-red-500 text-lg leading-none">×</button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t border-gray-100 p-3 flex gap-2 items-end">
+        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="text-gray-400 hover:text-indigo-500 transition text-xl shrink-0 pb-1.5"
+          title="צרף קובץ"
+        >
+          📎
+        </button>
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={handleKey}
+          onPaste={handlePaste}
           placeholder="כתוב הודעה... (Enter לשליחה)"
           rows={1}
           className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -136,10 +220,10 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
         />
         <button
           onClick={send}
-          disabled={!text.trim() || sending}
+          disabled={(!text.trim() && !pendingFile) || sending}
           className="bg-indigo-600 text-white rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-40 hover:bg-indigo-700 transition shrink-0"
         >
-          שלח
+          {sending ? '...' : 'שלח'}
         </button>
       </div>
     </div>

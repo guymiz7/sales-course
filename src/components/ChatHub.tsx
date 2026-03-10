@@ -11,6 +11,7 @@ interface GroupMsg {
 }
 interface PM {
   id: string; content: string; created_at: string; sender_id: string; read_at: string | null
+  attachment_url?: string | null; attachment_type?: string | null
 }
 interface Conversation {
   userId: string; userName: string; avatarUrl: string | null; role: string | null
@@ -79,7 +80,7 @@ export default function ChatHub({
     // Fetch messages
     const { data } = await supabase
       .from('private_messages')
-      .select('id, content, created_at, sender_id, read_at')
+      .select('id, content, created_at, sender_id, read_at, attachment_url, attachment_type')
       .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
       .order('created_at', { ascending: true })
       .limit(200)
@@ -216,6 +217,7 @@ export default function ChatHub({
             currentUserAvatar={currentUserAvatar}
             currentUserRole={currentUserRole}
             initialMessages={initialGroupMessages}
+            onOpenDm={openDm}
           />
         ) : (
           <div className="hidden md:flex flex-1 items-center justify-center text-gray-400 text-sm flex-col gap-2">
