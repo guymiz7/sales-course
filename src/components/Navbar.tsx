@@ -26,12 +26,18 @@ export default function Navbar({ userName, role, courseName, pendingCount, openQ
   const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => socialLinks?.[p.key])
   const followLinks = FOLLOW_PLATFORMS.filter(p => socialLinks?.[p.key])
 
-  // Admin: clear badge when on chat page
+  // Admin: clear badge + mark all PMs as read in DB when entering chat
   useEffect(() => {
-    if (role === 'admin' && pathname.startsWith('/admin/chat')) {
+    if (role === 'admin' && pathname.startsWith('/admin/chat') && userId) {
       setAdminChatUnread(0)
+      const supabase = createClient()
+      supabase.from('private_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('receiver_id', userId)
+        .is('read_at', null)
+        .then(() => {})
     }
-  }, [pathname, role])
+  }, [pathname, role, userId])
 
   // Admin: live unread PM badge
   useEffect(() => {
