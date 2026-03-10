@@ -183,7 +183,8 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
     <div className="flex flex-col flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Notice banner */}
       <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 text-center">
-        💬 הצ׳אט לשיחות ופאן בלבד · לשאלות שמחכות למענה מהמרצה — כנסו לאזור <strong>השאלות</strong>
+        💬 הצ׳אט לשיחות ופאן בלבד · לשאלות שמחכות למענה מהמרצה — כנסו לאזור{' '}
+        <a href="/lessons/questions" className="font-bold underline hover:text-amber-900 transition">השאלות</a>
       </div>
       {/* Messages */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
