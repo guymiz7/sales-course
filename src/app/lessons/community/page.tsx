@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS } from '@/lib/recommendPlatforms'
+import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, safeUrl } from '@/lib/recommendPlatforms'
 
 interface Member {
   id: string
@@ -63,7 +63,7 @@ function MemberCard({ member, badge, currentUserId, adminSettings }: {
           {RECOMMEND_PLATFORMS_LIST.filter(p => adminSettings[p.key]).map(p => (
             <a
               key={p.key}
-              href={adminSettings[p.key]!}
+              href={safeUrl(adminSettings[p.key])!}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
@@ -75,7 +75,7 @@ function MemberCard({ member, badge, currentUserId, adminSettings }: {
           {FOLLOW_PLATFORMS.filter(p => adminSettings[p.key]).map(p => (
             <a
               key={p.key}
-              href={adminSettings[p.key]!}
+              href={safeUrl(adminSettings[p.key])!}
               target="_blank"
               rel="noopener noreferrer"
               title={p.label}
@@ -91,22 +91,22 @@ function MemberCard({ member, badge, currentUserId, adminSettings }: {
       {!isAdmin && (member.website_url || member.facebook_url || member.instagram_url || member.linkedin_url) && (
         <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
           {member.linkedin_url && (
-            <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer">
+            <a href={safeUrl(member.linkedin_url)!} target="_blank" rel="noopener noreferrer">
               <img src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=32" alt="LinkedIn" className="w-4 h-4" />
             </a>
           )}
           {member.facebook_url && (
-            <a href={member.facebook_url} target="_blank" rel="noopener noreferrer">
+            <a href={safeUrl(member.facebook_url)!} target="_blank" rel="noopener noreferrer">
               <img src="https://www.google.com/s2/favicons?domain=facebook.com&sz=32" alt="Facebook" className="w-4 h-4" />
             </a>
           )}
           {member.instagram_url && (
-            <a href={member.instagram_url} target="_blank" rel="noopener noreferrer">
+            <a href={safeUrl(member.instagram_url)!} target="_blank" rel="noopener noreferrer">
               <img src="https://www.google.com/s2/favicons?domain=instagram.com&sz=32" alt="Instagram" className="w-4 h-4" />
             </a>
           )}
           {member.website_url && (
-            <a href={member.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">אתר</a>
+            <a href={safeUrl(member.website_url)!} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">אתר</a>
           )}
         </div>
       )}
@@ -142,7 +142,7 @@ export default async function CommunityPage() {
     supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('role', 'admin'),
     cohortId ? supabase.from('user_cohorts').select('user_id').eq('cohort_id', cohortId) : Promise.resolve({ data: [] as any[] }),
     supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').neq('id', user.id).neq('role', 'admin').in('profile_visibility', ['cohort', 'course', 'community']),
-    supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
+    supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
   ])
 
   const cohortMemberIds = new Set((cohortUsers || []).map((u: any) => u.user_id as string))

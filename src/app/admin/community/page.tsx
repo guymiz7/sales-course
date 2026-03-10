@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { safeUrl } from '@/lib/recommendPlatforms'
 
 interface Member {
   id: string
@@ -87,22 +88,22 @@ export default async function AdminCommunityPage() {
             {(member.website_url || member.facebook_url || member.instagram_url || member.linkedin_url) && (
               <div className="flex items-center gap-2 pt-1 border-t border-gray-100 flex-wrap">
                 {member.website_url && (
-                  <a href={member.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline truncate max-w-[120px]">
+                  <a href={safeUrl(member.website_url)!} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline truncate max-w-[120px]">
                     🌐 {member.website_url.replace(/^https?:\/\//, '')}
                   </a>
                 )}
                 {member.linkedin_url && (
-                  <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer" title="LinkedIn">
+                  <a href={safeUrl(member.linkedin_url)!} target="_blank" rel="noopener noreferrer" title="LinkedIn">
                     <img src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=32" alt="LinkedIn" className="w-4 h-4" />
                   </a>
                 )}
                 {member.facebook_url && (
-                  <a href={member.facebook_url} target="_blank" rel="noopener noreferrer" title="Facebook">
+                  <a href={safeUrl(member.facebook_url)!} target="_blank" rel="noopener noreferrer" title="Facebook">
                     <img src="https://www.google.com/s2/favicons?domain=facebook.com&sz=32" alt="Facebook" className="w-4 h-4" />
                   </a>
                 )}
                 {member.instagram_url && (
-                  <a href={member.instagram_url} target="_blank" rel="noopener noreferrer" title="Instagram">
+                  <a href={safeUrl(member.instagram_url)!} target="_blank" rel="noopener noreferrer" title="Instagram">
                     <img src="https://www.google.com/s2/favicons?domain=instagram.com&sz=32" alt="Instagram" className="w-4 h-4" />
                   </a>
                 )}
