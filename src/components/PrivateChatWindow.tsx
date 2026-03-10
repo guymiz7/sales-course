@@ -20,10 +20,11 @@ interface Props {
   otherUserName: string
   otherUserAvatar: string | null
   otherUserRole: string | null
+  otherUserProfileVisibility?: string | null
   initialMessages: PM[]
 }
 
-export default function PrivateChatWindow({ currentUserId, currentUserName, otherUserId, otherUserName, otherUserAvatar, otherUserRole, initialMessages }: Props) {
+export default function PrivateChatWindow({ currentUserId, currentUserName, otherUserId, otherUserName, otherUserAvatar, otherUserRole, otherUserProfileVisibility, initialMessages }: Props) {
   const [messages, setMessages] = useState<PM[]>(initialMessages)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
@@ -142,15 +143,20 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
     <div className="flex flex-col flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
-        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
           {otherUserAvatar
             ? <img src={otherUserAvatar} alt="" className="w-full h-full object-cover" />
             : <span className="text-sm">👤</span>
           }
         </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{otherUserName}</p>
-          {otherUserRole === 'admin' && <p className="text-xs text-indigo-600">מרצה</p>}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-gray-900">{otherUserName}</p>
+            {otherUserRole === 'admin' && <span className="text-xs text-indigo-500">מרצה</span>}
+            {otherUserProfileVisibility === 'public' && (
+              <a href="/lessons/community" className="text-xs text-indigo-400 hover:text-indigo-600 hover:underline transition">צפה בפרופיל</a>
+            )}
+          </div>
         </div>
       </div>
 

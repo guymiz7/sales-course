@@ -49,12 +49,12 @@ export default async function AdminChatPage({ searchParams }: { searchParams: { 
 
   const otherIds = Array.from(convMap.keys())
   const { data: otherUsers } = otherIds.length > 0
-    ? await supabase.from('users').select('id, full_name, avatar_url, role').in('id', otherIds)
+    ? await supabase.from('users').select('id, full_name, avatar_url, role, profile_visibility').in('id', otherIds)
     : { data: [] }
 
   const conversations = Array.from(convMap.entries()).map(([userId, conv]) => {
     const u = (otherUsers || []).find((u: any) => u.id === userId)
-    return { userId, userName: u ? (u as any).full_name || '' : '', avatarUrl: u ? (u as any).avatar_url : null, role: u ? (u as any).role : null, ...conv }
+    return { userId, userName: u ? (u as any).full_name || 'חבר קהילה' : 'חבר קהילה', avatarUrl: u ? (u as any).avatar_url : null, role: u ? (u as any).role : null, profileVisibility: u ? (u as any).profile_visibility : null, ...conv }
   }).sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
 
   if (!cohortId) {

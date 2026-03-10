@@ -15,7 +15,12 @@ interface PM {
 }
 interface Conversation {
   userId: string; userName: string; avatarUrl: string | null; role: string | null
+  profileVisibility?: string | null
   lastMessage: string; lastAt: string; unread: number
+}
+interface DmPerson {
+  userId: string; userName: string; avatarUrl: string | null; role: string | null
+  profileVisibility?: string | null
 }
 
 interface Props {
@@ -35,13 +40,13 @@ export default function ChatHub({
   initialGroupMessages, initialConversations, adminUser, initialDm
 }: Props) {
   const [activeDm, setActiveDm] = useState<string | null>(null)
+  const [activeDmInfo, setActiveDmInfo] = useState<DmPerson | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations)
   const [pmMessages, setPmMessages] = useState<PM[]>([])
   const [loadingDm, setLoadingDm] = useState(false)
-  const [showList, setShowList] = useState(true) // mobile: show list or chat
+  const [showList, setShowList] = useState(true)
   const supabase = createClient()
 
-  // Auto-open DM if initialDm is provided
   useEffect(() => {
     if (initialDm) openDm(initialDm)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,7 +58,7 @@ export default function ChatHub({
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'private_messages', filter: `receiver_id=eq.${currentUserId}` },
         async (payload) => {
           const msg = payload.new as any
-          const { data: sender } = await supabase.from('users').select('id, full_name, avatar_url, role').eq('id', msg.sender_id).single()
+          const { data: sender } = await supabase.from('users').select('id, full_name, avatar_url, role, profile_visibility').eq('id', msg.sender_id).single()
           if (!sender) return
           setConversations(prev => {
             const existing = prev.find(c => c.userId === msg.sender_id)
@@ -63,7 +68,16 @@ export default function ChatHub({
                 : c
               ).sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
             }
-            return [{ userId: sender.id, userName: sender.full_name || '', avatarUrl: sender.avatar_url, role: sender.role, lastMessage: msg.content, lastAt: msg.created_at, unread: activeDm === msg.sender_id ? 0 : 1 }, ...prev]
+            return [{
+              userId: sender.id,
+              userName: sender.full_name || 'חבר קהילה',
+              avatarUrl: sender.avatar_url,
+              role: sender.role,
+              profileVisibility: (sender as any).profile_visibility,
+              lastMessage: msg.content,
+              lastAt: msg.created_at,
+              unread: activeDm === msg.sender_id ? 0 : 1,
+            }, ...prev]
           })
         }
       )
@@ -75,25 +89,43 @@ export default function ChatHub({
     setLoadingDm(true)
     setActiveDm(userId)
     setShowList(false)
-    // Mark as read in conversation list
     setConversations(prev => prev.map(c => c.userId === userId ? { ...c, unread: 0 } : c))
-    // Fetch messages
-    const { data } = await supabase
-      .from('private_messages')
-      .select('id, content, created_at, sender_id, read_at, attachment_url, attachment_type')
-      .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
-      .order('created_at', { ascending: true })
-      .limit(200)
-    setPmMessages((data || []) as any)
+
+    const [{ data: msgs }, { data: otherUser }] = await Promise.all([
+      supabase
+        .from('private_messages')
+        .select('id, content, created_at, sender_id, read_at, attachment_url, attachment_type')
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+        .order('created_at', { ascending: true })
+        .limit(200),
+      supabase.from('users').select('id, full_name, avatar_url, role, profile_visibility').eq('id', userId).single(),
+    ])
+
+    if (otherUser) {
+      const info: DmPerson = {
+        userId: otherUser.id,
+        userName: otherUser.full_name || 'חבר קהילה',
+        avatarUrl: otherUser.avatar_url,
+        role: otherUser.role,
+        profileVisibility: (otherUser as any).profile_visibility,
+      }
+      setActiveDmInfo(info)
+      // Add to sidebar list if not already there
+      setConversations(prev => {
+        if (prev.find(c => c.userId === userId)) return prev
+        return [{ ...info, lastMessage: '', lastAt: '', unread: 0 }, ...prev]
+      })
+    }
+
+    setPmMessages((msgs || []) as any)
     setLoadingDm(false)
   }
 
   function openGroup() {
     setActiveDm(null)
+    setActiveDmInfo(null)
     setShowList(false)
   }
-
-  const activePerson = activeDm ? conversations.find(c => c.userId === activeDm) || (adminUser?.id === activeDm ? { userId: adminUser.id, userName: adminUser.full_name || 'מרצה', avatarUrl: adminUser.avatar_url, role: 'admin', lastMessage: '', lastAt: '', unread: 0 } : null) : null
 
   const totalUnreadDm = conversations.reduce((s, c) => s + c.unread, 0)
 
@@ -137,7 +169,7 @@ export default function ChatHub({
             )}
           </div>
 
-          {/* Admin DM (always show if not self) */}
+          {/* Admin DM (always show if not self and not already in conversations) */}
           {adminUser && adminUser.id !== currentUserId && !conversations.find(c => c.userId === adminUser.id) && (
             <button
               onClick={() => openDm(adminUser.id)}
@@ -171,10 +203,10 @@ export default function ChatHub({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{conv.userName}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{conv.userName || 'חבר קהילה'}</p>
                   {conv.role === 'admin' && <span className="text-xs text-indigo-500 shrink-0">מרצה</span>}
                 </div>
-                <p className="text-xs text-gray-400 truncate">{conv.lastMessage}</p>
+                <p className="text-xs text-gray-400 truncate">{conv.lastMessage || 'התחל שיחה'}</p>
               </div>
             </button>
           ))}
@@ -195,20 +227,23 @@ export default function ChatHub({
           ← חזור
         </button>
 
-        {activeDm && activePerson ? (
+        {activeDm && activeDmInfo ? (
           loadingDm ? (
             <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">טוען...</div>
           ) : (
             <PrivateChatWindow
               currentUserId={currentUserId}
               currentUserName={currentUserName}
-              otherUserId={activePerson.userId}
-              otherUserName={activePerson.userName}
-              otherUserAvatar={activePerson.avatarUrl}
-              otherUserRole={activePerson.role}
+              otherUserId={activeDmInfo.userId}
+              otherUserName={activeDmInfo.userName}
+              otherUserAvatar={activeDmInfo.avatarUrl}
+              otherUserRole={activeDmInfo.role}
+              otherUserProfileVisibility={activeDmInfo.profileVisibility}
               initialMessages={pmMessages}
             />
           )
+        ) : loadingDm ? (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">טוען...</div>
         ) : !showList ? (
           <ChatWindow
             cohortId={cohortId}
