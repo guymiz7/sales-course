@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import CopyButton from '@/components/CopyButton'
@@ -231,12 +232,19 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                     </td>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-1 justify-center">
+                        <Link
+                          href={`/admin/students/${student.user_id}`}
+                          className="text-gray-400 hover:text-indigo-600 transition text-sm"
+                          title="עריכת תלמיד"
+                        >
+                          ✏️
+                        </Link>
                         <button
                           onClick={() => setManagingUserId(managingUserId === student.user_id ? null : student.user_id)}
                           className="text-gray-400 hover:text-indigo-600 transition text-sm"
                           title="ניהול מחזורים"
                         >
-                          ✏️
+                          ⚙️
                         </button>
                         <button
                           onClick={() => deleteStudent(student.user_id, student.users?.full_name || '')}
