@@ -51,7 +51,7 @@ export default async function AdminChatPage({ searchParams }: { searchParams: { 
 
   const otherIds = Array.from(convMap.keys())
   const { data: otherUsers } = otherIds.length > 0
-    ? await supabase.from('users').select('id, full_name, avatar_url, role, profile_visibility').in('id', otherIds)
+    ? await adminSupabase.from('users').select('id, full_name, avatar_url, role, profile_visibility').in('id', otherIds)
     : { data: [] }
 
   const conversations = Array.from(convMap.entries()).map(([userId, conv]) => {
