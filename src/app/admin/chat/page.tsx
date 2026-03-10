@@ -32,7 +32,7 @@ export default async function AdminChatPage({ searchParams }: { searchParams: { 
   const adminSupabase = createAdminClient()
   const [{ data: groupMessages }, { data: allPMs }] = await Promise.all([
     cohortId
-      ? adminSupabase.from('chat_messages').select('id, content, created_at, user_id, attachment_url, attachment_type, users(full_name, avatar_url, role)').eq('cohort_id', cohortId).order('created_at', { ascending: true }).limit(200)
+      ? adminSupabase.from('chat_messages').select('id, content, created_at, user_id, attachment_url, attachment_type, reply_to_id, users(full_name, avatar_url, role)').eq('cohort_id', cohortId).order('created_at', { ascending: true }).limit(200)
       : Promise.resolve({ data: [] }),
     supabase.from('private_messages').select('id, content, created_at, sender_id, receiver_id, read_at').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order('created_at', { ascending: false }),
   ])
@@ -76,7 +76,7 @@ export default async function AdminChatPage({ searchParams }: { searchParams: { 
         currentUserName={profile?.full_name || 'מרצה'}
         currentUserAvatar={profile?.avatar_url || null}
         currentUserRole="admin"
-        initialGroupMessages={(groupMessages || []) as any}
+        initialGroupMessages={(() => { const msgs = (groupMessages || []) as any[]; const map = new Map(msgs.map((m: any) => [m.id, m])); return msgs.map((m: any) => ({ ...m, reply: m.reply_to_id ? (map.get(m.reply_to_id) ? { id: map.get(m.reply_to_id).id, content: map.get(m.reply_to_id).content, user_id: map.get(m.reply_to_id).user_id, users: map.get(m.reply_to_id).users } : null) : null })) as any })()
         initialConversations={conversations}
         adminUser={null}
         initialDm={dmUserId}

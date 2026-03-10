@@ -11,6 +11,6 @@ export async function POST(req: NextRequest) {
   if (!ids || !Array.isArray(ids) || ids.length === 0) return NextResponse.json({ users: [] })
 
   const admin = createAdminClient()
-  const { data } = await admin.from('users').select('id, full_name, avatar_url, role').in('id', ids)
+  const { data } = await admin.from('users').select('id, full_name, avatar_url, role, profile_visibility').in('id', ids)
   return NextResponse.json({ users: data || [] })
 }

@@ -91,26 +91,27 @@ export default function ChatHub({
     setShowList(false)
     setConversations(prev => prev.map(c => c.userId === userId ? { ...c, unread: 0 } : c))
 
-    const [{ data: msgs }, { data: otherUser }] = await Promise.all([
+    const [{ data: msgs }, usersRes] = await Promise.all([
       supabase
         .from('private_messages')
         .select('id, content, created_at, sender_id, read_at, attachment_url, attachment_type')
         .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
         .order('created_at', { ascending: true })
         .limit(200),
-      supabase.from('users').select('id, full_name, avatar_url, role, profile_visibility').eq('id', userId).single(),
+      // Use API route (admin client) to bypass RLS and always get user info
+      fetch('/api/users/names', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [userId] }) }).then(r => r.json()),
     ])
 
+    const otherUser = usersRes?.users?.[0] || null
     if (otherUser) {
       const info: DmPerson = {
         userId: otherUser.id,
         userName: otherUser.full_name || 'חבר קהילה',
         avatarUrl: otherUser.avatar_url,
         role: otherUser.role,
-        profileVisibility: (otherUser as any).profile_visibility,
+        profileVisibility: otherUser.profile_visibility,
       }
       setActiveDmInfo(info)
-      // Add to sidebar list if not already there
       setConversations(prev => {
         if (prev.find(c => c.userId === userId)) return prev
         return [{ ...info, lastMessage: '', lastAt: '', unread: 0 }, ...prev]
