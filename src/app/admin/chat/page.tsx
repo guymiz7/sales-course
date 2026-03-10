@@ -76,7 +76,7 @@ export default async function AdminChatPage({ searchParams }: { searchParams: { 
         currentUserName={profile?.full_name || 'מרצה'}
         currentUserAvatar={profile?.avatar_url || null}
         currentUserRole="admin"
-        initialGroupMessages={(() => { const msgs = (groupMessages || []) as any[]; const map = new Map(msgs.map((m: any) => [m.id, m])); return msgs.map((m: any) => ({ ...m, reply: m.reply_to_id ? (map.get(m.reply_to_id) ? { id: map.get(m.reply_to_id).id, content: map.get(m.reply_to_id).content, user_id: map.get(m.reply_to_id).user_id, users: map.get(m.reply_to_id).users } : null) : null })) as any })()
+        initialGroupMessages={(() => { const msgs = (groupMessages || []) as any[]; const map = new Map(msgs.map((m: any) => [m.id, m])); return msgs.map((m: any) => ({ ...m, reply: m.reply_to_id ? (map.get(m.reply_to_id) ? { id: map.get(m.reply_to_id).id, content: map.get(m.reply_to_id).content, user_id: map.get(m.reply_to_id).user_id, users: map.get(m.reply_to_id).users } : null) : null })) as any })()}
         initialConversations={conversations}
         adminUser={null}
         initialDm={dmUserId}

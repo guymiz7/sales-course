@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { RECOMMEND_PLATFORMS_LIST, FOLLOW_PLATFORMS, safeUrl } from '@/lib/recommendPlatforms'
 
@@ -137,11 +138,12 @@ export default async function CommunityPage() {
 
   const cohortId = cohortData?.cohort_id
 
+  const adminSupabase = createAdminClient()
   const [{ data: me }, { data: admins }, { data: cohortUsers }, { data: others }, { data: adminSettings }] = await Promise.all([
     supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('id', user.id).single(),
-    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('role', 'admin'),
-    cohortId ? supabase.from('user_cohorts').select('user_id').eq('cohort_id', cohortId) : Promise.resolve({ data: [] as any[] }),
-    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').neq('id', user.id).neq('role', 'admin').in('profile_visibility', ['cohort', 'course', 'community']),
+    adminSupabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('role', 'admin'),
+    cohortId ? adminSupabase.from('user_cohorts').select('user_id').eq('cohort_id', cohortId) : Promise.resolve({ data: [] as any[] }),
+    adminSupabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').neq('id', user.id).neq('role', 'admin').in('profile_visibility', ['cohort', 'course', 'community']),
     supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
   ])
 

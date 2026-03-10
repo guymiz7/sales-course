@@ -49,7 +49,7 @@ export default async function ChatPage() {
         currentUserName={profile?.full_name || ''}
         currentUserAvatar={profile?.avatar_url || null}
         currentUserRole={(profile?.role as 'admin' | 'student') || 'student'}
-        initialGroupMessages={(() => { const msgs = (groupMessages || []) as any[]; const map = new Map(msgs.map((m: any) => [m.id, m])); return msgs.map((m: any) => ({ ...m, reply: m.reply_to_id ? (map.get(m.reply_to_id) ? { id: map.get(m.reply_to_id).id, content: map.get(m.reply_to_id).content, user_id: map.get(m.reply_to_id).user_id, users: map.get(m.reply_to_id).users } : null) : null })) as any })()
+        initialGroupMessages={(() => { const msgs = (groupMessages || []) as any[]; const map = new Map(msgs.map((m: any) => [m.id, m])); return msgs.map((m: any) => ({ ...m, reply: m.reply_to_id ? (map.get(m.reply_to_id) ? { id: map.get(m.reply_to_id).id, content: map.get(m.reply_to_id).content, user_id: map.get(m.reply_to_id).user_id, users: map.get(m.reply_to_id).users } : null) : null })) as any })()}
         initialConversations={conversations}
         adminUser={adminUser || null}
       />
