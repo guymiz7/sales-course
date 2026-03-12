@@ -233,6 +233,12 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
     setShowNotifyModal(false)
   }
 
+  async function deleteMessage(msgId: string) {
+    if (!confirm('למחוק את ההודעה?')) return
+    await supabase.from('chat_messages').delete().eq('id', msgId)
+    setMessages(prev => prev.filter(m => m.id !== msgId))
+  }
+
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
     if (e.key === 'Escape' && replyingTo) setReplyingTo(null)
@@ -304,16 +310,27 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                       </span>
                     )}
 
-                    {/* Bubble + reply button */}
+                    {/* Bubble + action buttons */}
                     <div className={clsx('flex items-center gap-1', isMine ? 'flex-row' : 'flex-row-reverse')}>
-                      {/* Reply button on hover */}
-                      <button
-                        onClick={() => setReplyingTo(msg)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 text-sm p-1 rounded-full hover:bg-gray-100 shrink-0"
-                        title="הגב"
-                      >
-                        ↩
-                      </button>
+                      {/* Action buttons on hover */}
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0">
+                        <button
+                          onClick={() => setReplyingTo(msg)}
+                          className="text-gray-400 hover:text-gray-600 text-sm p-1 rounded-full hover:bg-gray-100"
+                          title="הגב"
+                        >
+                          ↩
+                        </button>
+                        {currentUserRole === 'admin' && (
+                          <button
+                            onClick={() => deleteMessage(msg.id)}
+                            className="text-gray-400 hover:text-red-500 text-sm p-1 rounded-full hover:bg-gray-100"
+                            title="מחק הודעה"
+                          >
+                            🗑
+                          </button>
+                        )}
+                      </div>
 
                       {/* Bubble */}
                       <div
