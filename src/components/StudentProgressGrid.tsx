@@ -203,6 +203,7 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                   <tr className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2.5 pr-4">
                       <p className="font-medium text-gray-800">{student.users?.full_name || '—'}</p>
+                      {student.users?.email && <p className="text-xs text-gray-500">{student.users.email}</p>}
                       <p className="text-xs text-gray-400">{viewedCount}/{cohortLessons.length} שיעורים</p>
                     </td>
                     {cohortLessons.map(l => {
