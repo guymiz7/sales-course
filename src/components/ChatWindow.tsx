@@ -58,7 +58,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const [pollOptions, setPollOptions] = useState(['', ''])
   const [creatingPoll, setCreatingPoll] = useState(false)
   const [notifying, setNotifying] = useState(false)
-  const [notifyResult, setNotifyResult] = useState<{ sent: number; total: number } | null>(null)
+  const [notifyResult, setNotifyResult] = useState<{ sent: number; total: number; error?: string } | null>(null)
   const [showNotifyModal, setShowNotifyModal] = useState(false)
   const [notifyText, setNotifyText] = useState('יש עדכון חשוב בצ׳אט הקבוצתי — נשמח לתגובתכם!')
   const [showPollConfirm, setShowPollConfirm] = useState(false)
@@ -222,12 +222,12 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
       })
       const data = await res.json()
       if (res.ok) {
-        setNotifyResult({ sent: data.sent, total: data.total })
+        setNotifyResult({ sent: data.sent, total: data.total, error: undefined })
       } else {
-        setNotifyResult({ sent: -1, total: 0 })
+        setNotifyResult({ sent: -1, total: 0, error: data.error || `HTTP ${res.status}` })
       }
-    } catch {
-      setNotifyResult({ sent: -1, total: 0 })
+    } catch (e: any) {
+      setNotifyResult({ sent: -1, total: 0, error: e?.message || 'Network error' })
     }
     setNotifying(false)
     setShowNotifyModal(false)
@@ -568,6 +568,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                 <div className="text-4xl">❌</div>
                 <p className="font-bold text-gray-900">שגיאה בשליחה</p>
                 <p className="text-sm text-gray-600">לא הצלחנו לשלוח את ההתראה. נסה שוב.</p>
+                {notifyResult.error && <p className="text-xs text-red-500 bg-red-50 rounded p-2 mt-1 break-all">{notifyResult.error}</p>}
               </>
             )}
             <button onClick={() => setNotifyResult(null)} className="text-sm bg-gray-100 text-gray-700 px-5 py-1.5 rounded-lg hover:bg-gray-200 transition font-medium">

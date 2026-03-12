@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     .map((u: any) => ({ email: u.users.email, name: u.users.full_name || 'תלמיד/ה' }))
 
   if (students.length === 0) {
-    return NextResponse.json({ sent: 0 })
+    return NextResponse.json({ sent: 0, total: 0 })
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY)
