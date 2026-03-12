@@ -53,6 +53,12 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
+  const [showPollForm, setShowPollForm] = useState(false)
+  const [pollQuestion, setPollQuestion] = useState('')
+  const [pollOptions, setPollOptions] = useState(['', ''])
+  const [creatingPoll, setCreatingPoll] = useState(false)
+  const [notifying, setNotifying] = useState(false)
+  const [notified, setNotified] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -163,16 +169,40 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
       ...(replyId && { reply_to_id: replyId }),
     })
 
-    // Admin: *כולם triggers email notification to all students
-    if (currentUserRole === 'admin' && msgText.includes('*כולם')) {
-      fetch('/api/admin/notify-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cohortId, message: msgText }),
-      }).catch(() => {})
-    }
-
     setSending(false)
+  }
+
+  async function createPollInline() {
+    const q = pollQuestion.trim()
+    const opts = pollOptions.map(o => o.trim()).filter(Boolean)
+    if (!q || opts.length < 2) return
+    setCreatingPoll(true)
+    const { data: newPoll } = await supabase.from('chat_polls').insert({
+      cohort_id: cohortId, created_by: currentUserId, question: q,
+      options: opts.map(text => ({ text })),
+    }).select('id').single()
+    if (newPoll) {
+      await supabase.from('chat_messages').insert({
+        cohort_id: cohortId, user_id: currentUserId,
+        content: `📊 סקר: ${q}`, poll_id: newPoll.id,
+      })
+    }
+    setPollQuestion('')
+    setPollOptions(['', ''])
+    setShowPollForm(false)
+    setCreatingPoll(false)
+  }
+
+  async function notifyAll() {
+    setNotifying(true)
+    await fetch('/api/admin/notify-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cohortId, message: 'יש עדכון חשוב בצ׳אט הקבוצתי — נשמח לתגובתכם!' }),
+    }).catch(() => {})
+    setNotifying(false)
+    setNotified(true)
+    setTimeout(() => setNotified(false), 3000)
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -327,10 +357,66 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
         </div>
       )}
 
+      {/* Inline poll form (admin) */}
+      {showPollForm && currentUserRole === 'admin' && (
+        <div className="border-t border-gray-100 px-4 py-3 bg-amber-50/50 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-700">📊 סקר חדש</p>
+            <button onClick={() => setShowPollForm(false)} className="text-gray-400 hover:text-red-500 text-lg leading-none">×</button>
+          </div>
+          <input
+            value={pollQuestion}
+            onChange={e => setPollQuestion(e.target.value)}
+            placeholder="שאלת הסקר..."
+            className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          {pollOptions.map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+              <input
+                value={opt}
+                onChange={e => { const n = [...pollOptions]; n[i] = e.target.value; setPollOptions(n) }}
+                placeholder={`אופציה ${i + 1}`}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              {pollOptions.length > 2 && (
+                <button onClick={() => setPollOptions(pollOptions.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 text-sm">✕</button>
+              )}
+            </div>
+          ))}
+          <div className="flex items-center gap-2">
+            {pollOptions.length < 5 && (
+              <button onClick={() => setPollOptions([...pollOptions, ''])} className="text-xs text-indigo-600 hover:text-indigo-800">+ אופציה</button>
+            )}
+            <div className="flex-1" />
+            <button
+              onClick={createPollInline}
+              disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2 || creatingPoll}
+              className="text-xs bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition font-medium"
+            >
+              {creatingPoll ? '...' : 'שלח סקר לצ׳אט'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t border-gray-100 p-3 flex gap-2 items-end">
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
         <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-indigo-500 transition text-xl shrink-0 pb-1.5" title="צרף קובץ">📎</button>
+        {currentUserRole === 'admin' && (
+          <>
+            <button onClick={() => setShowPollForm(!showPollForm)} className="text-gray-400 hover:text-amber-500 transition text-xl shrink-0 pb-1.5" title="צור סקר">📊</button>
+            <button
+              onClick={notifyAll}
+              disabled={notifying}
+              className={clsx('transition text-xl shrink-0 pb-1.5', notified ? 'text-green-500' : 'text-gray-400 hover:text-red-500')}
+              title="שלח התראה לכל התלמידים"
+            >
+              {notified ? '✓' : '📢'}
+            </button>
+          </>
+        )}
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
