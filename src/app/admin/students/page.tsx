@@ -9,7 +9,7 @@ export default async function StudentsPage() {
     .from('user_cohorts')
     .select(`
       user_id, cohort_id, access_mode,
-      users!user_cohorts_user_id_fkey(id, full_name, email),
+      users!user_cohorts_user_id_fkey(id, full_name, email, registration_number),
       cohorts(id, name, access_mode, course_id, courses(name, access_mode))
     `)
     .order('cohort_id')

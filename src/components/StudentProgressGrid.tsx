@@ -9,7 +9,7 @@ interface Enrollment {
   user_id: string
   cohort_id: string
   access_mode: string | null
-  users: { id: string; full_name: string; email: string } | null
+  users: { id: string; full_name: string; email: string; registration_number: number | null } | null
   cohorts: {
     id: string
     name: string
@@ -202,7 +202,10 @@ export default function StudentProgressGrid({ enrollments, lessons, lessonViews,
                   <React.Fragment key={student.user_id}>
                   <tr className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2.5 pr-4">
-                      <p className="font-medium text-gray-800">{student.users?.full_name || '—'}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-800">{student.users?.full_name || '—'}</p>
+                        {student.users?.registration_number && <span className="text-xs text-gray-400 font-mono">#{student.users.registration_number}</span>}
+                      </div>
                       {student.users?.email && <p className="text-xs text-gray-500">{student.users.email}</p>}
                       <p className="text-xs text-gray-400">{viewedCount}/{cohortLessons.length} שיעורים</p>
                     </td>

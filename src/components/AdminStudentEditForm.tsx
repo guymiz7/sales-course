@@ -36,6 +36,15 @@ interface Props {
   allCohorts: CohortOption[]
 }
 
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div>
+    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+    {children}
+  </div>
+)
+
+const inputCls = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+
 export default function AdminStudentEditForm({ student, cohorts, allCohorts }: Props) {
   const router = useRouter()
   const supabase = createClient()
@@ -111,15 +120,6 @@ export default function AdminStudentEditForm({ student, cohorts, allCohorts }: P
     if (added) setCurrentCohorts(prev => [...prev, { cohort_id: cohortId, cohorts: { id: cohortId, name: added.name, courses: added.courses } }])
     setCohortLoading(false)
   }
-
-  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
-      {children}
-    </div>
-  )
-
-  const inputCls = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
 
   return (
     <div className="space-y-6">
