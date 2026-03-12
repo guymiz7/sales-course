@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import clsx from 'clsx'
+import InlinePoll from './InlinePoll'
 
 interface ReplyPreview {
   id: string
@@ -17,6 +18,7 @@ interface ChatMessage {
   user_id: string
   attachment_url?: string | null
   attachment_type?: string | null
+  poll_id?: string | null
   reply_to_id?: string | null
   reply?: ReplyPreview | null
   users: { full_name: string | null; avatar_url: string | null; role: string | null } | null
@@ -91,7 +93,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
             const replyMsg = p.reply_to_id ? prev.find(m => m.id === p.reply_to_id) : null
             const msg: ChatMessage = {
               id: p.id, content: p.content, created_at: p.created_at, user_id: p.user_id,
-              attachment_url: p.attachment_url, attachment_type: p.attachment_type,
+              attachment_url: p.attachment_url, attachment_type: p.attachment_type, poll_id: p.poll_id,
               reply_to_id: p.reply_to_id,
               reply: replyMsg ? { id: replyMsg.id, content: replyMsg.content, user_id: replyMsg.user_id, users: replyMsg.users } : null,
               users: userInfo,
@@ -273,7 +275,9 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                           </div>
                         )}
 
-                        {msg.content && <span>{msg.content}</span>}
+                        {msg.poll_id ? (
+                          <InlinePoll pollId={msg.poll_id} currentUserId={currentUserId} />
+                        ) : msg.content ? <span>{msg.content}</span> : null}
                         {msg.attachment_url && (
                           msg.attachment_type === 'image'
                             ? <img src={msg.attachment_url} alt="תמונה מצורפת" className="max-w-full rounded-lg mt-1 max-h-64 object-contain cursor-pointer" onClick={() => window.open(msg.attachment_url!, '_blank')} />

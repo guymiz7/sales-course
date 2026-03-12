@@ -62,12 +62,21 @@ export default function PollsPanel({ cohortId, currentUserId, currentUserRole }:
     const opts = options.map(o => o.trim()).filter(Boolean)
     if (!q || opts.length < 2) return
     setCreating(true)
-    await supabase.from('chat_polls').insert({
+    const { data: newPoll } = await supabase.from('chat_polls').insert({
       cohort_id: cohortId,
       created_by: currentUserId,
       question: q,
       options: opts.map(text => ({ text })),
-    })
+    }).select('id').single()
+    // Auto-send poll as chat message
+    if (newPoll) {
+      await supabase.from('chat_messages').insert({
+        cohort_id: cohortId,
+        user_id: currentUserId,
+        content: `📊 סקר: ${q}`,
+        poll_id: newPoll.id,
+      })
+    }
     setQuestion('')
     setOptions(['', ''])
     setShowCreate(false)
