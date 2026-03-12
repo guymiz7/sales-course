@@ -162,6 +162,16 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
       ...(attachment && { attachment_url: attachment.url, attachment_type: attachment.type }),
       ...(replyId && { reply_to_id: replyId }),
     })
+
+    // Admin: *כולם triggers email notification to all students
+    if (currentUserRole === 'admin' && msgText.includes('*כולם')) {
+      fetch('/api/admin/notify-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cohortId, message: msgText }),
+      }).catch(() => {})
+    }
+
     setSending(false)
   }
 
