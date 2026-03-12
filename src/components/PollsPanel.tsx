@@ -42,6 +42,15 @@ export default function PollsPanel({ cohortId, currentUserId, currentUserRole }:
   const [options, setOptions] = useState(['', ''])
   const [creating, setCreating] = useState(false)
 
+  // Edit poll
+  const [editingPollId, setEditingPollId] = useState<string | null>(null)
+  const [editQuestion, setEditQuestion] = useState('')
+  const [editOptions, setEditOptions] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+
+  // Delete confirm
+  const [deletingPollId, setDeletingPollId] = useState<string | null>(null)
+
   useEffect(() => {
     loadPolls()
   }, [cohortId])
@@ -101,6 +110,35 @@ export default function PollsPanel({ cohortId, currentUserId, currentUserRole }:
   async function togglePoll(pollId: string, active: boolean) {
     await supabase.from('chat_polls').update({ is_active: active }).eq('id', pollId)
     setPolls(prev => prev.map(p => p.id === pollId ? { ...p, is_active: active } : p))
+  }
+
+  function startEdit(poll: Poll) {
+    setEditingPollId(poll.id)
+    setEditQuestion(poll.question)
+    setEditOptions(poll.options.map(o => o.text))
+  }
+
+  async function saveEdit() {
+    if (!editingPollId) return
+    const q = editQuestion.trim()
+    const opts = editOptions.map(o => o.trim()).filter(Boolean)
+    if (!q || opts.length < 2) return
+    setSaving(true)
+    await supabase.from('chat_polls').update({
+      question: q,
+      options: opts.map(text => ({ text })),
+    }).eq('id', editingPollId)
+    setPolls(prev => prev.map(p => p.id === editingPollId ? { ...p, question: q, options: opts.map(text => ({ text })) } : p))
+    setEditingPollId(null)
+    setSaving(false)
+  }
+
+  async function deletePoll(pollId: string) {
+    await supabase.from('chat_poll_votes').delete().eq('poll_id', pollId)
+    await supabase.from('chat_polls').delete().eq('id', pollId)
+    setPolls(prev => prev.filter(p => p.id !== pollId))
+    setVotes(prev => prev.filter(v => v.poll_id !== pollId))
+    setDeletingPollId(null)
   }
 
   function addOption() {
@@ -189,66 +227,128 @@ export default function PollsPanel({ cohortId, currentUserId, currentUserRole }:
           const myVote = pollVotes.find(v => v.user_id === currentUserId)
           const totalVotes = pollVotes.length
 
+          const isEditing = editingPollId === poll.id
+
           return (
             <div key={poll.id} className={clsx('border rounded-xl p-4', poll.is_active ? 'border-gray-200' : 'border-gray-100 opacity-60')}>
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <h3 className="font-semibold text-gray-900 text-sm">{poll.question}</h3>
-                {isAdmin && (
-                  <button
-                    onClick={() => togglePoll(poll.id, !poll.is_active)}
-                    className="text-xs text-gray-400 hover:text-gray-600 shrink-0"
-                    title={poll.is_active ? 'סגור סקר' : 'פתח סקר'}
-                  >
-                    {poll.is_active ? '🔒' : '🔓'}
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                {(poll.options as PollOption[]).map((opt, i) => {
-                  const optVotes = pollVotes.filter(v => v.option_index === i).length
-                  const pct = totalVotes > 0 ? Math.round((optVotes / totalVotes) * 100) : 0
-                  const isMyVote = myVote?.option_index === i
-
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => poll.is_active && vote(poll.id, i)}
-                      disabled={!poll.is_active}
-                      className={clsx(
-                        'w-full rounded-lg px-3 py-2 text-sm text-right relative overflow-hidden transition',
-                        isMyVote ? 'border-2 border-indigo-400 bg-indigo-50' : 'border border-gray-200 hover:border-gray-300',
-                        !poll.is_active && 'cursor-default'
-                      )}
-                    >
-                      {/* Progress bar bg */}
-                      <div
-                        className={clsx('absolute inset-y-0 right-0 transition-all duration-500', isMyVote ? 'bg-indigo-100' : 'bg-gray-50')}
-                        style={{ width: `${pct}%` }}
+              {isEditing ? (
+                /* Edit form */
+                <div className="space-y-3">
+                  <input
+                    value={editQuestion}
+                    onChange={e => setEditQuestion(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    placeholder="שאלת הסקר..."
+                  />
+                  {editOptions.map((opt, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 w-4 shrink-0">{i + 1}.</span>
+                      <input
+                        value={opt}
+                        onChange={e => { const n = [...editOptions]; n[i] = e.target.value; setEditOptions(n) }}
+                        placeholder={`אופציה ${i + 1}`}
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       />
-                      <div className="relative flex items-center justify-between gap-2">
-                        <span className={clsx('font-medium', isMyVote ? 'text-indigo-700' : 'text-gray-700')}>
-                          {opt.text}
-                        </span>
-                        <span className={clsx('text-xs shrink-0', isMyVote ? 'text-indigo-600 font-bold' : 'text-gray-400')}>
-                          {pct}% ({optVotes})
-                        </span>
-                      </div>
+                      {editOptions.length > 2 && (
+                        <button onClick={() => setEditOptions(editOptions.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 text-sm">✕</button>
+                      )}
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2">
+                    {editOptions.length < 5 && (
+                      <button onClick={() => setEditOptions([...editOptions, ''])} className="text-xs text-indigo-600 hover:text-indigo-800 transition">+ אופציה</button>
+                    )}
+                    <div className="flex-1" />
+                    <button onClick={() => setEditingPollId(null)} className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">ביטול</button>
+                    <button
+                      onClick={saveEdit}
+                      disabled={!editQuestion.trim() || editOptions.filter(o => o.trim()).length < 2 || saving}
+                      className="text-xs bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition font-medium"
+                    >
+                      {saving ? '...' : 'שמור'}
                     </button>
-                  )
-                })}
-              </div>
+                  </div>
+                </div>
+              ) : (
+                /* Normal view */
+                <>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <h3 className="font-semibold text-gray-900 text-sm">{poll.question}</h3>
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => startEdit(poll)} className="text-xs text-gray-400 hover:text-indigo-600" title="ערוך סקר">✏️</button>
+                        <button onClick={() => setDeletingPollId(poll.id)} className="text-xs text-gray-400 hover:text-red-500" title="מחק סקר">🗑️</button>
+                        <button
+                          onClick={() => togglePoll(poll.id, !poll.is_active)}
+                          className="text-xs text-gray-400 hover:text-gray-600"
+                          title={poll.is_active ? 'סגור סקר' : 'פתח סקר'}
+                        >
+                          {poll.is_active ? '🔒' : '🔓'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-gray-400">{totalVotes} הצבעות</p>
-                <p className="text-xs text-gray-400">
-                  {new Date(poll.created_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
-                </p>
-              </div>
+                  <div className="space-y-2">
+                    {(poll.options as PollOption[]).map((opt, i) => {
+                      const optVotes = pollVotes.filter(v => v.option_index === i).length
+                      const pct = totalVotes > 0 ? Math.round((optVotes / totalVotes) * 100) : 0
+                      const isMyVote = myVote?.option_index === i
+
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => poll.is_active && vote(poll.id, i)}
+                          disabled={!poll.is_active}
+                          className={clsx(
+                            'w-full rounded-lg px-3 py-2 text-sm text-right relative overflow-hidden transition',
+                            isMyVote ? 'border-2 border-indigo-400 bg-indigo-50' : 'border border-gray-200 hover:border-gray-300',
+                            !poll.is_active && 'cursor-default'
+                          )}
+                        >
+                          <div
+                            className={clsx('absolute inset-y-0 right-0 transition-all duration-500', isMyVote ? 'bg-indigo-100' : 'bg-gray-50')}
+                            style={{ width: `${pct}%` }}
+                          />
+                          <div className="relative flex items-center justify-between gap-2">
+                            <span className={clsx('font-medium', isMyVote ? 'text-indigo-700' : 'text-gray-700')}>
+                              {opt.text}
+                            </span>
+                            <span className={clsx('text-xs shrink-0', isMyVote ? 'text-indigo-600 font-bold' : 'text-gray-400')}>
+                              {pct}% ({optVotes})
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-gray-400">{totalVotes} הצבעות</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(poll.created_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )
         })}
       </div>
+
+      {/* Delete confirm modal */}
+      {deletingPollId && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setDeletingPollId(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-xs w-full p-5 text-center space-y-3" dir="rtl" onClick={e => e.stopPropagation()}>
+            <p className="font-bold text-gray-900">מחיקת סקר</p>
+            <p className="text-sm text-gray-600">האם אתה בטוח? כל ההצבעות ימחקו לצמיתות.</p>
+            <div className="flex items-center gap-2 justify-center">
+              <button onClick={() => setDeletingPollId(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">ביטול</button>
+              <button onClick={() => deletePoll(deletingPollId)} className="text-sm bg-red-600 text-white px-5 py-1.5 rounded-lg hover:bg-red-700 transition font-medium">מחק</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

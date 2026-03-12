@@ -58,7 +58,10 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const [pollOptions, setPollOptions] = useState(['', ''])
   const [creatingPoll, setCreatingPoll] = useState(false)
   const [notifying, setNotifying] = useState(false)
-  const [notified, setNotified] = useState(false)
+  const [notifyResult, setNotifyResult] = useState<{ sent: number; total: number } | null>(null)
+  const [showNotifyModal, setShowNotifyModal] = useState(false)
+  const [notifyText, setNotifyText] = useState('יש עדכון חשוב בצ׳אט הקבוצתי — נשמח לתגובתכם!')
+  const [showPollConfirm, setShowPollConfirm] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -172,20 +175,36 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
     setSending(false)
   }
 
+  function preparePollPublish() {
+    const q = pollQuestion.trim()
+    const opts = pollOptions.map(o => o.trim()).filter(Boolean)
+    if (!q || opts.length < 2) return
+    setShowPollConfirm(true)
+  }
+
   async function createPollInline() {
     const q = pollQuestion.trim()
     const opts = pollOptions.map(o => o.trim()).filter(Boolean)
     if (!q || opts.length < 2) return
     setCreatingPoll(true)
-    const { data: newPoll } = await supabase.from('chat_polls').insert({
+    setShowPollConfirm(false)
+    const { data: newPoll, error } = await supabase.from('chat_polls').insert({
       cohort_id: cohortId, created_by: currentUserId, question: q,
       options: opts.map(text => ({ text })),
     }).select('id').single()
+    if (error) {
+      alert('שגיאה ביצירת הסקר: ' + error.message)
+      setCreatingPoll(false)
+      return
+    }
     if (newPoll) {
-      await supabase.from('chat_messages').insert({
+      const { error: msgError } = await supabase.from('chat_messages').insert({
         cohort_id: cohortId, user_id: currentUserId,
         content: `📊 סקר: ${q}`, poll_id: newPoll.id,
       })
+      if (msgError) {
+        alert('הסקר נוצר אך שגיאה בפרסום בצ׳אט: ' + msgError.message)
+      }
     }
     setPollQuestion('')
     setPollOptions(['', ''])
@@ -195,14 +214,23 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
 
   async function notifyAll() {
     setNotifying(true)
-    await fetch('/api/admin/notify-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cohortId, message: 'יש עדכון חשוב בצ׳אט הקבוצתי — נשמח לתגובתכם!' }),
-    }).catch(() => {})
+    try {
+      const res = await fetch('/api/admin/notify-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cohortId, message: notifyText }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setNotifyResult({ sent: data.sent, total: data.total })
+      } else {
+        setNotifyResult({ sent: -1, total: 0 })
+      }
+    } catch {
+      setNotifyResult({ sent: -1, total: 0 })
+    }
     setNotifying(false)
-    setNotified(true)
-    setTimeout(() => setNotified(false), 3000)
+    setShowNotifyModal(false)
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -390,11 +418,11 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
             )}
             <div className="flex-1" />
             <button
-              onClick={createPollInline}
+              onClick={preparePollPublish}
               disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2 || creatingPoll}
               className="text-xs bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition font-medium"
             >
-              {creatingPoll ? '...' : 'שלח סקר לצ׳אט'}
+              {creatingPoll ? '...' : 'המשך לפרסום'}
             </button>
           </div>
         </div>
@@ -408,12 +436,11 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
           <>
             <button onClick={() => setShowPollForm(!showPollForm)} className="text-gray-400 hover:text-amber-500 transition text-xl shrink-0 pb-1.5" title="צור סקר">📊</button>
             <button
-              onClick={notifyAll}
-              disabled={notifying}
-              className={clsx('transition text-xl shrink-0 pb-1.5', notified ? 'text-green-500' : 'text-gray-400 hover:text-red-500')}
+              onClick={() => { setNotifyResult(null); setShowNotifyModal(true) }}
+              className="text-gray-400 hover:text-red-500 transition text-xl shrink-0 pb-1.5"
               title="שלח התראה לכל התלמידים"
             >
-              {notified ? '✓' : '📢'}
+              📢
             </button>
           </>
         )}
@@ -431,6 +458,107 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
           {sending ? '...' : 'שלח'}
         </button>
       </div>
+
+      {/* Poll confirm modal */}
+      {showPollConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowPollConfirm(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-4" dir="rtl" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-gray-900 text-base">פרסום סקר בצ׳אט</h3>
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+              <p className="font-semibold text-sm text-gray-800">{pollQuestion.trim()}</p>
+              {pollOptions.filter(o => o.trim()).map((opt, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="text-xs text-gray-400">{i + 1}.</span>
+                  <span>{opt.trim()}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500">הסקר יפורסם בצ׳אט הקבוצתי וכל המשתתפים יוכלו להצביע.</p>
+            <div className="flex items-center gap-2 justify-end">
+              <button onClick={() => setShowPollConfirm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">
+                ביטול
+              </button>
+              <button
+                onClick={createPollInline}
+                disabled={creatingPoll}
+                className="text-sm bg-indigo-600 text-white px-5 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition font-medium"
+              >
+                {creatingPoll ? 'מפרסם...' : 'פרסם סקר'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notify confirm modal */}
+      {showNotifyModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowNotifyModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4" dir="rtl" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-gray-900 text-base">שליחת התראה במייל לכל התלמידים</h3>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-600">טקסט ההודעה (ניתן לערוך):</label>
+              <textarea
+                value={notifyText}
+                onChange={e => setNotifyText(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+              />
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+              <p className="text-xs font-medium text-gray-500">תצוגה מקדימה של המייל:</p>
+              <div className="text-sm">
+                <p className="text-gray-500">נושא: <span className="text-gray-800 font-medium">הודעה חדשה בצ׳אט — מחכים לתגובתך!</span></p>
+                <div className="mt-2 bg-white rounded-lg border border-gray-200 p-3">
+                  <p className="font-bold text-gray-900 text-sm mb-1">יש הודעה חדשה בצ׳אט!</p>
+                  <p className="text-xs text-gray-500 mb-2">המרצה פרסם הודעה בצ׳אט הקבוצתי ומחכה לתגובתך:</p>
+                  <div className="bg-gray-50 border-r-2 border-indigo-500 px-3 py-2 rounded text-xs text-gray-700">
+                    {notifyText}
+                  </div>
+                  <div className="mt-3">
+                    <span className="bg-indigo-600 text-white text-xs px-4 py-1.5 rounded-lg inline-block">כניסה לצ׳אט</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 justify-end">
+              <button onClick={() => setShowNotifyModal(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">
+                ביטול
+              </button>
+              <button
+                onClick={notifyAll}
+                disabled={notifying || !notifyText.trim()}
+                className="text-sm bg-red-600 text-white px-5 py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-40 transition font-medium"
+              >
+                {notifying ? 'שולח...' : 'שלח מייל לכולם'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notify result toast */}
+      {notifyResult && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setNotifyResult(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-xs w-full p-5 text-center space-y-3" dir="rtl" onClick={e => e.stopPropagation()}>
+            {notifyResult.sent >= 0 ? (
+              <>
+                <div className="text-4xl">✅</div>
+                <p className="font-bold text-gray-900">ההתראה נשלחה בהצלחה!</p>
+                <p className="text-sm text-gray-600">נשלחו {notifyResult.sent} מיילים מתוך {notifyResult.total} תלמידים</p>
+              </>
+            ) : (
+              <>
+                <div className="text-4xl">❌</div>
+                <p className="font-bold text-gray-900">שגיאה בשליחה</p>
+                <p className="text-sm text-gray-600">לא הצלחנו לשלוח את ההתראה. נסה שוב.</p>
+              </>
+            )}
+            <button onClick={() => setNotifyResult(null)} className="text-sm bg-gray-100 text-gray-700 px-5 py-1.5 rounded-lg hover:bg-gray-200 transition font-medium">
+              סגור
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
