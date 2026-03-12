@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import ChatWindow from './ChatWindow'
 import PrivateChatWindow from './PrivateChatWindow'
+import PollsPanel from './PollsPanel'
 import clsx from 'clsx'
 
 interface GroupMsg {
@@ -45,6 +46,7 @@ export default function ChatHub({
   const [pmMessages, setPmMessages] = useState<PM[]>([])
   const [loadingDm, setLoadingDm] = useState(false)
   const [showList, setShowList] = useState(true)
+  const [showPolls, setShowPolls] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -88,6 +90,7 @@ export default function ChatHub({
   async function openDm(userId: string) {
     setLoadingDm(true)
     setActiveDm(userId)
+    setShowPolls(false)
     setShowList(false)
     setConversations(prev => prev.map(c => c.userId === userId ? { ...c, unread: 0 } : c))
 
@@ -125,6 +128,14 @@ export default function ChatHub({
   function openGroup() {
     setActiveDm(null)
     setActiveDmInfo(null)
+    setShowPolls(false)
+    setShowList(false)
+  }
+
+  function openPolls() {
+    setActiveDm(null)
+    setActiveDmInfo(null)
+    setShowPolls(true)
     setShowList(false)
   }
 
@@ -159,6 +170,23 @@ export default function ChatHub({
               <p className="text-xs text-gray-400 truncate">
                 {initialGroupMessages[initialGroupMessages.length - 1]?.content || 'אין הודעות עדיין'}
               </p>
+            </div>
+          </button>
+
+          {/* Polls button */}
+          <button
+            onClick={openPolls}
+            className={clsx(
+              'w-full flex items-center gap-3 px-4 py-3 text-right hover:bg-gray-50 transition border-b border-gray-50',
+              showPolls && !activeDm ? 'bg-indigo-50' : ''
+            )}
+          >
+            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 text-lg shrink-0">
+              📊
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-900">סקרים</p>
+              <p className="text-xs text-gray-400 truncate">הצבע וצפה בתוצאות</p>
             </div>
           </button>
 
@@ -228,7 +256,13 @@ export default function ChatHub({
           ← חזור
         </button>
 
-        {activeDm && activeDmInfo ? (
+        {showPolls && !activeDm ? (
+          <PollsPanel
+            cohortId={cohortId}
+            currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
+          />
+        ) : activeDm && activeDmInfo ? (
           loadingDm ? (
             <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">טוען...</div>
           ) : (
