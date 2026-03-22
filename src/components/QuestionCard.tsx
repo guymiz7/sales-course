@@ -224,7 +224,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
         {/* Content */}
         <div className="flex-1 min-w-0">
           <p className={clsx(
-            'text-sm leading-snug',
+            'text-sm leading-snug whitespace-pre-wrap',
             !localIsRead && !isAdmin && !isOwnQuestion ? 'font-semibold text-gray-900' : 'font-normal text-gray-700'
           )}>
             {question.content}

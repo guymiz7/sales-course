@@ -19,17 +19,18 @@ export default async function AdminDashboard() {
     .eq('is_done', false)
     .order('created_at', { ascending: false })
 
-  const unanswered = (questions || []).filter(q => q.replies.length === 0)
+  const openQuestions = (questions || []) as any
+  const unansweredCount = openQuestions.filter((q: any) => q.replies.length === 0).length
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-bold text-gray-900">שאלות פתוחות</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {unanswered.length} שאלות ממתינות לתשובה
+          {openQuestions.length} שאלות פתוחות · {unansweredCount} ממתינות לתשובה ראשונה
         </p>
       </div>
-      <AdminQuestionList questions={unanswered as any} currentUserId={user!.id} />
+      <AdminQuestionList questions={openQuestions} currentUserId={user!.id} showFilters />
     </div>
   )
 }

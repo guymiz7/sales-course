@@ -62,6 +62,8 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const [showNotifyModal, setShowNotifyModal] = useState(false)
   const [notifyText, setNotifyText] = useState('יש עדכון חשוב בצ׳אט הקבוצתי — נשמח לתגובתכם!')
   const [showPollConfirm, setShowPollConfirm] = useState(false)
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null)
+  const [editMsgContent, setEditMsgContent] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -239,6 +241,15 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
     setMessages(prev => prev.filter(m => m.id !== msgId))
   }
 
+  async function saveEditMessage() {
+    if (!editingMsgId || !editMsgContent.trim()) return
+    const newContent = editMsgContent.trim()
+    setMessages(prev => prev.map(m => m.id === editingMsgId ? { ...m, content: newContent } : m))
+    setEditingMsgId(null)
+    setEditMsgContent('')
+    await supabase.from('chat_messages').update({ content: newContent }).eq('id', editingMsgId)
+  }
+
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
     if (e.key === 'Escape' && replyingTo) setReplyingTo(null)
@@ -321,6 +332,15 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                         >
                           ↩
                         </button>
+                        {isMine && !msg.poll_id && (
+                          <button
+                            onClick={() => { setEditingMsgId(msg.id); setEditMsgContent(msg.content) }}
+                            className="text-gray-400 hover:text-indigo-500 text-sm p-1 rounded-full hover:bg-gray-100"
+                            title="ערוך"
+                          >
+                            ✏️
+                          </button>
+                        )}
                         {currentUserRole === 'admin' && (
                           <button
                             onClick={() => deleteMessage(msg.id)}
@@ -362,6 +382,35 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
 
                         {msg.poll_id ? (
                           <InlinePoll pollId={msg.poll_id} currentUserId={currentUserId} />
+                        ) : editingMsgId === msg.id ? (
+                          <div className="space-y-1.5 min-w-[200px]">
+                            <textarea
+                              value={editMsgContent}
+                              onChange={e => setEditMsgContent(e.target.value)}
+                              rows={2}
+                              className="w-full border border-indigo-300 rounded-lg px-2 py-1.5 text-sm text-gray-900 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
+                              autoFocus
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEditMessage() }
+                                if (e.key === 'Escape') { setEditingMsgId(null); setEditMsgContent('') }
+                              }}
+                            />
+                            <div className="flex gap-2 justify-start">
+                              <button
+                                onClick={saveEditMessage}
+                                disabled={!editMsgContent.trim()}
+                                className="text-xs bg-white text-indigo-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-indigo-50 disabled:opacity-40"
+                              >
+                                שמור
+                              </button>
+                              <button
+                                onClick={() => { setEditingMsgId(null); setEditMsgContent('') }}
+                                className="text-xs text-indigo-200 hover:text-white"
+                              >
+                                ביטול
+                              </button>
+                            </div>
+                          </div>
                         ) : msg.content ? <span>{msg.content}</span> : null}
                         {msg.attachment_url && (
                           msg.attachment_type === 'image'
