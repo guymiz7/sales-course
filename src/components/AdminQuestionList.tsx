@@ -35,9 +35,12 @@ export default function AdminQuestionList({ questions, currentUserId, showFilter
 
   useEffect(() => { setLocalQuestions(questions) }, [questions])
 
+  // "unanswered" = admin hasn't replied yet (student replies don't count)
+  const hasAdminReply = (q: Question) => q.replies.some(r => r.user_id === currentUserId)
+
   const filtered = localQuestions.filter(q => {
-    if (filter === 'answered') return q.replies.length > 0
-    if (filter === 'unanswered') return q.replies.length === 0
+    if (filter === 'answered') return hasAdminReply(q)
+    if (filter === 'unanswered') return !hasAdminReply(q)
     return true
   })
 

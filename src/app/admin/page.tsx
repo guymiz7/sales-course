@@ -20,7 +20,9 @@ export default async function AdminDashboard() {
     .order('created_at', { ascending: false })
 
   const openQuestions = (questions || []) as any
-  const unansweredCount = openQuestions.filter((q: any) => q.replies.length === 0).length
+  const unansweredCount = openQuestions.filter((q: any) =>
+    !q.replies.some((r: any) => r.user_id === user!.id)
+  ).length
 
   return (
     <div>

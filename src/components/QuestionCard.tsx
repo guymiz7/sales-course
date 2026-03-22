@@ -205,37 +205,40 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
     )}>
       {/* Header */}
       <div
-        className="flex items-start gap-3 p-4 cursor-pointer select-none hover:bg-gray-50 active:bg-gray-100 transition-colors"
+        className="flex items-start gap-3 p-5 cursor-pointer select-none hover:bg-gray-50 active:bg-gray-100 transition-colors"
         onClick={handleExpand}
       >
         {/* Unread dot */}
-        <div className="mt-1.5 shrink-0">
+        <div className="mt-2 shrink-0">
           <div className={clsx(
-            'w-2 h-2 rounded-full transition-colors duration-300',
+            'w-2.5 h-2.5 rounded-full transition-colors duration-300',
             !localIsRead && !isAdmin && !isOwnQuestion ? 'bg-indigo-600' : 'bg-transparent'
           )} />
         </div>
 
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold shrink-0">
+        <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">
           {(question.users?.full_name || 'א')[0]}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          <p className="text-xs text-gray-400 mb-1.5 flex flex-wrap gap-x-2 items-center">
+            <span className="font-medium text-gray-600">{question.users?.full_name}</span>
+            <span>· {timeAgo(question.created_at)}</span>
+            {question.is_private && <span className="text-indigo-400">🔒 פרטי</span>}
+          </p>
           <p className={clsx(
-            'text-sm leading-snug whitespace-pre-wrap',
+            'text-sm leading-relaxed whitespace-pre-wrap',
             !localIsRead && !isAdmin && !isOwnQuestion ? 'font-semibold text-gray-900' : 'font-normal text-gray-700'
           )}>
             {question.content}
           </p>
-          <p className="text-xs text-gray-400 mt-1 flex flex-wrap gap-x-2 items-center">
-            <span>{question.users?.full_name} · {timeAgo(question.created_at)}</span>
-            {question.is_private && <span className="text-indigo-400">🔒 פרטי</span>}
-            {localReplies.length > 0 && <span className="text-blue-500">💬 {localReplies.length}</span>}
-            {userAnswered && <span className="text-green-600 font-medium">✓ קיבלתי מענה</span>}
-            {isDone && <span className="text-gray-400">✓ טופל</span>}
-          </p>
+          <div className="flex flex-wrap gap-x-3 items-center mt-2">
+            {localReplies.length > 0 && <span className="text-xs text-blue-500">💬 {localReplies.length} תגובות</span>}
+            {userAnswered && <span className="text-xs text-green-600 font-medium">✓ קיבלתי מענה</span>}
+            {isDone && <span className="text-xs text-gray-400">✓ טופל</span>}
+          </div>
         </div>
 
         {/* Right controls */}
@@ -279,7 +282,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
 
           {/* Replies thread */}
           {localReplies.length > 0 && (
-            <div className="px-4 pt-3 pb-1 space-y-2">
+            <div className="px-4 pt-4 pb-2 space-y-3">
               {localReplies.map(reply => {
                 // In RTL: ml-auto pushes element to the RIGHT (start direction)
                 //         mr-auto pushes element to the LEFT (end direction)
@@ -287,7 +290,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
                 const isEditing = editingReplyId === reply.id
                 return (
                   <div key={reply.id} className={clsx(
-                    'rounded-2xl px-3 py-2.5 text-sm max-w-[80%]',
+                    'rounded-2xl px-4 py-3 text-sm max-w-[85%] shadow-sm',
                     isMyReply
                       ? 'bg-indigo-600 text-white ml-auto'   // my messages → RIGHT in RTL
                       : 'bg-white border border-gray-200 mr-auto'  // others → LEFT in RTL
@@ -326,7 +329,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
                       </div>
                     ) : (
                       <>
-                        <p className="leading-snug whitespace-pre-wrap">{reply.content}</p>
+                        <p className="leading-relaxed whitespace-pre-wrap">{reply.content}</p>
                         <div className={clsx(
                           'flex items-center justify-between mt-1.5 gap-3',
                           isMyReply ? 'text-indigo-300' : 'text-gray-400'
