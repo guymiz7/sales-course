@@ -201,7 +201,7 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
   return (
     <div className={clsx(
       'border rounded-xl overflow-hidden border-gray-200 bg-white transition-opacity duration-200',
-      isDone && 'opacity-50'
+      isDone && 'opacity-70'
     )}>
       {/* Header */}
       <div
@@ -229,8 +229,8 @@ export default function QuestionCard({ question, currentUserId, isAdmin, onMarkD
             {question.is_private && <span className="text-indigo-400">🔒 פרטי</span>}
           </p>
           <p className={clsx(
-            'text-sm leading-relaxed whitespace-pre-wrap',
-            !localIsRead && !isAdmin && !isOwnQuestion ? 'font-semibold text-gray-900' : 'font-normal text-gray-700'
+            'text-sm leading-relaxed whitespace-pre-wrap text-gray-900',
+            !localIsRead && !isAdmin && !isOwnQuestion && 'font-semibold'
           )}>
             {question.content}
           </p>
