@@ -50,6 +50,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
@@ -498,6 +499,24 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
       <div className="border-t border-gray-100 p-3 flex gap-2 items-end">
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
         <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-indigo-500 transition text-xl shrink-0 pb-1.5" title="צרף קובץ">📎</button>
+        <div className="relative shrink-0">
+          <button onClick={() => setShowEmoji(v => !v)} className="text-gray-400 hover:text-amber-500 transition text-xl pb-1.5" title="אימוג׳י">😊</button>
+          {showEmoji && (
+            <div className="absolute bottom-10 right-0 bg-white border border-gray-200 rounded-xl shadow-lg p-2 z-50 w-64 max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-8 gap-0.5">
+                {['😀','😂','🤣','😊','😍','🥰','😎','🤩','😇','🙏','👏','💪','🔥','❤️','💯','✅','👍','👎','🎯','🎉','🤔','😅','😢','😮','🤝','⭐','💡','📌','🚀','💰','📈','📊','🏆','💎','🙌','😁','🤗','😳','👀','🫶','✨','💥','🎊','❓','‼️','👋','🤞','💬','📣','🧠'].map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => { setText(prev => prev + emoji); setShowEmoji(false) }}
+                    className="text-xl hover:bg-gray-100 rounded p-1 transition"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         {currentUserRole === 'admin' && (
           <>
             <button onClick={() => setShowPollForm(!showPollForm)} className="text-gray-400 hover:text-amber-500 transition text-xl shrink-0 pb-1.5" title="צור סקר">📊</button>
