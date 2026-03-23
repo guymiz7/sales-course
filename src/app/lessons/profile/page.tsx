@@ -10,7 +10,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('full_name, phone, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility')
+    .select('full_name, phone, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, recommendation_url, profile_visibility')
     .eq('id', user.id)
     .single()
 
@@ -33,6 +33,7 @@ export default async function ProfilePage() {
           facebook_url: profile?.facebook_url || null,
           instagram_url: profile?.instagram_url || null,
           linkedin_url: profile?.linkedin_url || null,
+          recommendation_url: profile?.recommendation_url || null,
           profile_visibility: profile?.profile_visibility || 'private',
         }}
         userId={user.id}

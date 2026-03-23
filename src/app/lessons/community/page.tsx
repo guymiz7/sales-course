@@ -14,6 +14,7 @@ interface Member {
   facebook_url: string | null
   instagram_url: string | null
   linkedin_url: string | null
+  recommendation_url: string | null
   profile_visibility: string | null
   role?: string | null
 }
@@ -112,6 +113,18 @@ function MemberCard({ member, badge, currentUserId, adminSettings }: {
         </div>
       )}
 
+      {/* Recommendation link */}
+      {!isAdmin && !isSelf && member.recommendation_url && (
+        <a
+          href={member.recommendation_url.startsWith('http') ? member.recommendation_url : `https://${member.recommendation_url}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-sm transition border border-amber-200 hover:border-amber-300 font-medium"
+        >
+          ⭐ המלץ עליי
+        </a>
+      )}
+
       {/* Chat button — not for self */}
       {!isSelf && (
         <Link
@@ -140,10 +153,10 @@ export default async function CommunityPage() {
 
   const adminSupabase = createAdminClient()
   const [{ data: me }, { data: admins }, { data: cohortUsers }, { data: others }, { data: adminSettings }] = await Promise.all([
-    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('id', user.id).single(),
-    adminSupabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').eq('role', 'admin'),
+    supabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, recommendation_url, profile_visibility, role').eq('id', user.id).single(),
+    adminSupabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, recommendation_url, profile_visibility, role').eq('role', 'admin'),
     cohortId ? adminSupabase.from('user_cohorts').select('user_id').eq('cohort_id', cohortId) : Promise.resolve({ data: [] as any[] }),
-    adminSupabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, profile_visibility, role').neq('id', user.id).neq('role', 'admin').in('profile_visibility', ['cohort', 'course', 'community']),
+    adminSupabase.from('users').select('id, full_name, avatar_url, bio, systems, niches, website_url, facebook_url, instagram_url, linkedin_url, recommendation_url, profile_visibility, role').neq('id', user.id).neq('role', 'admin').in('profile_visibility', ['cohort', 'course', 'community']),
     supabase.from('admin_settings').select('google_review_url, facebook_page_url, website_review_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
   ])
 

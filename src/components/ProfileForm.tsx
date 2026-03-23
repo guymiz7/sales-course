@@ -14,6 +14,7 @@ interface Profile {
   facebook_url: string | null
   instagram_url: string | null
   linkedin_url: string | null
+  recommendation_url: string | null
   profile_visibility: string
 }
 
@@ -37,6 +38,7 @@ export default function ProfileForm({ profile: initial, userId, backHref }: Prop
   const [facebookUrl, setFacebookUrl] = useState(initial.facebook_url || '')
   const [instagramUrl, setInstagramUrl] = useState(initial.instagram_url || '')
   const [linkedinUrl, setLinkedinUrl] = useState(initial.linkedin_url || '')
+  const [recommendationUrl, setRecommendationUrl] = useState(initial.recommendation_url || '')
   const [visibility, setVisibility] = useState(initial.profile_visibility || 'private')
   const [avatarUrl, setAvatarUrl] = useState(initial.avatar_url || '')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -89,6 +91,7 @@ export default function ProfileForm({ profile: initial, userId, backHref }: Prop
       facebook_url: facebookUrl || null,
       instagram_url: instagramUrl || null,
       linkedin_url: linkedinUrl || null,
+      recommendation_url: recommendationUrl || null,
       profile_visibility: visibility,
     }).eq('id', userId)
     setSaving(false)
@@ -238,6 +241,7 @@ export default function ProfileForm({ profile: initial, userId, backHref }: Prop
             { label: 'פייסבוק', value: facebookUrl, set: setFacebookUrl, placeholder: 'https://facebook.com/...' },
             { label: 'אינסטגרם', value: instagramUrl, set: setInstagramUrl, placeholder: 'https://instagram.com/...' },
             { label: 'לינקדאין', value: linkedinUrl, set: setLinkedinUrl, placeholder: 'https://linkedin.com/in/...' },
+            { label: 'לינק להמלצה עליי', value: recommendationUrl, set: setRecommendationUrl, placeholder: 'https://g.page/... או כתובת פייסבוק/אתר' },
           ].map(({ label, value, set, placeholder }) => (
             <div key={label}>
               <label className="text-xs text-gray-500 block mb-1">{label}</label>
