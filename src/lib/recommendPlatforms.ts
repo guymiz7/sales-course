@@ -1,6 +1,7 @@
 export interface SocialLinks {
   google_review_url?: string | null
   facebook_page_url?: string | null
+  website_review_url?: string | null
   facebook_follow_url?: string | null
   instagram_url?: string | null
   linkedin_url?: string | null
@@ -19,6 +20,7 @@ export const RECOMMEND_PLATFORM = {
 export const RECOMMEND_PLATFORMS_LIST = [
   { key: 'google_review_url' as keyof SocialLinks, label: 'המלץ על גיא בגוגל', domain: 'google.com' },
   { key: 'facebook_page_url' as keyof SocialLinks, label: 'המלץ על גיא בפייסבוק', domain: 'facebook.com' },
+  { key: 'website_review_url' as keyof SocialLinks, label: 'המלץ על גיא באתר', domain: 'octgroup.co.il' },
 ]
 
 // "Follow" platforms shown as favicon icons

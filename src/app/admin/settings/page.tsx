@@ -6,7 +6,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from('admin_settings')
-    .select('webhook_url, api_key, google_review_url, facebook_page_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url')
+    .select('webhook_url, api_key, google_review_url, facebook_page_url, website_review_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url')
     .eq('id', 1)
     .single()
 
@@ -22,6 +22,7 @@ export default async function SettingsPage() {
         socialLinks={{
           google_review_url: settings?.google_review_url || '',
           facebook_page_url: settings?.facebook_page_url || '',
+          website_review_url: settings?.website_review_url || '',
           facebook_follow_url: settings?.facebook_follow_url || '',
           instagram_url: settings?.instagram_url || '',
           linkedin_url: settings?.linkedin_url || '',

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 interface SocialLinks {
   google_review_url: string
   facebook_page_url: string
+  website_review_url: string
   facebook_follow_url: string
   instagram_url: string
   linkedin_url: string
@@ -32,6 +33,7 @@ export default function AdminSettingsForm({ webhookUrl, apiKey, socialLinks: ini
     await supabase.from('admin_settings').update({
       google_review_url: social.google_review_url || null,
       facebook_page_url: social.facebook_page_url || null,
+      website_review_url: social.website_review_url || null,
       facebook_follow_url: social.facebook_follow_url || null,
       instagram_url: social.instagram_url || null,
       linkedin_url: social.linkedin_url || null,
@@ -167,6 +169,7 @@ export default function AdminSettingsForm({ webhookUrl, apiKey, socialLinks: ini
           {([
             { key: 'google_review_url', label: 'המלצה בגוגל' },
             { key: 'facebook_page_url', label: 'המלצה בפייסבוק' },
+            { key: 'website_review_url', label: 'המלצה באתר' },
             { key: 'facebook_follow_url', label: 'עמוד פייסבוק (עקוב)' },
             { key: 'instagram_url', label: 'אינסטגרם (עקוב)' },
             { key: 'linkedin_url', label: 'לינקדאין (עקוב)' },
