@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmailJS } from '@/lib/emailjs'
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-site.com'
+import { sendEmailJS, buildNotifyParams } from '@/lib/emailjs'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -32,18 +30,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sent: 0, total: 0 })
   }
 
-  const templateId = process.env.EMAILJS_TEMPLATE_NOTIFY || 'template_notify_chat'
   const messagePreview = message.replace('*כולם', '').trim()
 
   let sent = 0
   for (const student of students) {
     try {
-      await sendEmailJS(templateId, {
-        to_email: student.email,
-        to_name: student.name,
-        message_preview: messagePreview,
-        site_url: SITE_URL,
-      })
+      await sendEmailJS(buildNotifyParams(student.email, student.name, messagePreview))
       sent++
     } catch (e) {
       console.error(`Failed to send to ${student.email}:`, e)
