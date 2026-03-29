@@ -304,7 +304,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                     )}
                   </div>
 
-                  <div className={clsx('max-w-[85%] flex flex-col', isMine ? 'items-end' : 'items-start')}>
+                  <div className={clsx('min-w-0 max-w-[85%] flex flex-col', isMine ? 'items-end' : 'items-start')}>
                     {showAvatar && (
                       <span className={clsx('text-xs mb-0.5 flex items-center gap-1', isMine ? 'text-right' : 'text-left')}>
                         {isMine ? (
@@ -356,7 +356,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                       {/* Bubble */}
                       <div
                         className={clsx(
-                          'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words',
+                          'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words overflow-hidden',
                           isMine ? 'bg-indigo-600 text-white rounded-br-sm' :
                           isAdmin ? 'bg-indigo-50 text-gray-900 border border-indigo-100 rounded-bl-sm' :
                           'text-gray-900 rounded-bl-sm border'
