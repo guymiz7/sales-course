@@ -188,7 +188,7 @@ export default function PrivateChatWindow({ currentUserId, currentUserName, othe
                   ↩
                 </button>
                 <div className={clsx(
-                  'max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words overflow-hidden',
+                  'max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap min-w-0',
                   isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                 )}>
                   {/* Reply quote */}

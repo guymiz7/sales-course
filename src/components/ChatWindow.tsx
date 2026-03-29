@@ -323,9 +323,9 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                     )}
 
                     {/* Bubble + action buttons */}
-                    <div className={clsx('flex items-center gap-1', isMine ? 'flex-row' : 'flex-row-reverse')}>
+                    <div className={clsx('flex items-start gap-1 min-w-0 w-full', isMine ? 'flex-row' : 'flex-row-reverse')}>
                       {/* Action buttons on hover */}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0 pt-2">
                         <button
                           onClick={() => setReplyingTo(msg)}
                           className="text-gray-400 hover:text-gray-600 text-sm p-1 rounded-full hover:bg-gray-100"
@@ -356,7 +356,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                       {/* Bubble */}
                       <div
                         className={clsx(
-                          'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words overflow-hidden',
+                          'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap min-w-0',
                           isMine ? 'bg-indigo-600 text-white rounded-br-sm' :
                           isAdmin ? 'bg-indigo-50 text-gray-900 border border-indigo-100 rounded-bl-sm' :
                           'text-gray-900 rounded-bl-sm border'
