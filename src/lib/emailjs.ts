@@ -1,4 +1,5 @@
 const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY || ''
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || ''
 const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID || ''
 const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID || 'template_arp3s6s'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://sales-course-six.vercel.app'
@@ -11,6 +12,7 @@ export async function sendEmailJS(templateParams: Record<string, string>) {
       service_id: EMAILJS_SERVICE_ID,
       template_id: EMAILJS_TEMPLATE_ID,
       user_id: EMAILJS_PUBLIC_KEY,
+      accessToken: EMAILJS_PRIVATE_KEY,
       template_params: templateParams,
     }),
   })
