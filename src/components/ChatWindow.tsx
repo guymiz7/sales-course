@@ -304,7 +304,7 @@ export default function ChatWindow({ cohortId, currentUserId, currentUserName, c
                     )}
                   </div>
 
-                  <div className={clsx('max-w-[70%] flex flex-col', isMine ? 'items-end' : 'items-start')}>
+                  <div className={clsx('max-w-[85%] flex flex-col', isMine ? 'items-end' : 'items-start')}>
                     {showAvatar && (
                       <span className={clsx('text-xs mb-0.5 flex items-center gap-1', isMine ? 'text-right' : 'text-left')}>
                         {isMine ? (
