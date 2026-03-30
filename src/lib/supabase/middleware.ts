@@ -23,6 +23,15 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // Redirect old domain to new domain
+  const host = request.headers.get('host') || ''
+  if (host === 'sales-course-six.vercel.app') {
+    const newUrl = new URL(request.url)
+    newUrl.host = 'courses.mizinski.com'
+    newUrl.port = ''
+    return NextResponse.redirect(newUrl, 308)
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
