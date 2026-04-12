@@ -55,8 +55,8 @@ export async function updateSession(request: NextRequest) {
 
   const role = profile?.role
 
-  // Pending users → pending page
-  if (role === 'pending' && pathname !== '/pending') {
+  // Pending users → pending page (but allow password reset)
+  if (role === 'pending' && pathname !== '/pending' && !pathname.startsWith('/auth/')) {
     return NextResponse.redirect(new URL('/pending', request.url))
   }
 
