@@ -12,8 +12,10 @@ interface Props {
 }
 
 export default function PendingUsersList({ users, cohorts }: Props) {
-  const [selected, setSelected] = useState<Record<string, string>>({}) // userId → cohortId
+  const [selected, setSelected] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState<string | null>(null)
+  const [confirmRejectAll, setConfirmRejectAll] = useState(false)
+  const [rejectingAll, setRejectingAll] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -27,10 +29,8 @@ export default function PendingUsersList({ users, cohorts }: Props) {
     setLoading(user.id)
     const { data: { user: adminUser } } = await supabase.auth.getUser()
 
-    // Update role to student
     await supabase.from('users').update({ role: 'student' }).eq('id', user.id)
 
-    // Connect to cohort
     await supabase.from('user_cohorts').insert({
       user_id: user.id,
       cohort_id: cohortId,
@@ -38,7 +38,6 @@ export default function PendingUsersList({ users, cohorts }: Props) {
       approved_at: new Date().toISOString(),
     })
 
-    // Send approval email + webhook (fire and forget)
     fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,6 +53,49 @@ export default function PendingUsersList({ users, cohorts }: Props) {
     router.refresh()
   }
 
+  async function reject(user: User) {
+    if (!confirm(`למחוק את ${user.full_name}?\nהמשתמש יימחק לצמיתות ולא יוכל להתחבר.`)) return
+
+    setLoading(user.id)
+    try {
+      const res = await fetch('/api/admin/reject-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(`שגיאה במחיקה: ${err.error || res.statusText}`)
+      } else {
+        router.refresh()
+      }
+    } catch (e: any) {
+      alert(`שגיאה: ${e.message}`)
+    }
+    setLoading(null)
+  }
+
+  async function rejectAll() {
+    setRejectingAll(true)
+    try {
+      const res = await fetch('/api/admin/reject-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(`שגיאה: ${err.error || res.statusText}`)
+      } else {
+        router.refresh()
+      }
+    } catch (e: any) {
+      alert(`שגיאה: ${e.message}`)
+    }
+    setRejectingAll(false)
+    setConfirmRejectAll(false)
+  }
+
   if (users.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400 text-sm">
@@ -64,20 +106,28 @@ export default function PendingUsersList({ users, cohorts }: Props) {
 
   return (
     <div className="space-y-3">
+      {users.length > 1 && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setConfirmRejectAll(true)}
+            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 transition"
+          >
+            🗑 מחק את כולם ({users.length})
+          </button>
+        </div>
+      )}
+
       {users.map(user => (
         <div key={user.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
-          {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold shrink-0">
             {user.full_name[0]}
           </div>
 
-          {/* Info */}
           <div className="flex-1">
             <p className="font-medium text-gray-900 text-sm">{user.full_name}</p>
             <p className="text-xs text-gray-500">{user.email}</p>
           </div>
 
-          {/* Cohort selector */}
           <select
             value={selected[user.id] || ''}
             onChange={e => setSelected(prev => ({ ...prev, [user.id]: e.target.value }))}
@@ -91,7 +141,6 @@ export default function PendingUsersList({ users, cohorts }: Props) {
             ))}
           </select>
 
-          {/* Approve button */}
           <button
             onClick={() => approve(user)}
             disabled={loading === user.id || !selected[user.id]}
@@ -99,8 +148,44 @@ export default function PendingUsersList({ users, cohorts }: Props) {
           >
             {loading === user.id ? 'מאשר...' : 'אשר גישה'}
           </button>
+
+          <button
+            onClick={() => reject(user)}
+            disabled={loading === user.id}
+            className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg disabled:opacity-40 transition"
+            title="מחק משתמש"
+          >
+            🗑
+          </button>
         </div>
       ))}
+
+      {confirmRejectAll && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <p className="text-lg font-bold text-gray-900 mb-2">מחיקת כל הממתינים</p>
+            <p className="text-sm text-gray-600 mb-6">
+              פעולה זו תמחק את כל {users.length} המשתמשים הממתינים לצמיתות. לא ניתן לבטל.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmRejectAll(false)}
+                disabled={rejectingAll}
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={rejectAll}
+                disabled={rejectingAll}
+                className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 transition"
+              >
+                {rejectingAll ? 'מוחק...' : 'מחק את כולם'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
