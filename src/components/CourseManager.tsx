@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import LessonAttachmentsEditor from '@/components/LessonAttachmentsEditor'
 
 interface Part { id: string; number: number; title: string; image_url?: string | null }
 interface Lesson { id: string; number: number; title: string; google_drive_file_id: string; description: string; download_url: string; cohort_id: string | null; homework: string; part_id: string | null }
@@ -595,6 +596,9 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                           </div>
                         </div>
                       )}
+
+                      {/* Multi-attachments editor */}
+                      <LessonAttachmentsEditor lessonId={lesson.id} />
                     </div>
                   ) : (
                     <div>

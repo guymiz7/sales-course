@@ -78,8 +78,8 @@ export default async function LessonPage({ params }: { params: { id: string } })
     supabase.from('lessons').select('id, number, title').eq('course_id', lesson.course_id).eq('number', lesson.number + 1).maybeSingle(),
   ])
 
-  // Record view, fetch questions, and fetch admin social links in parallel
-  const [, { data: questions }, { data: adminSettings }] = await Promise.all([
+  // Record view, fetch questions, attachments, and admin social links in parallel
+  const [, { data: questions }, { data: adminSettings }, { data: attachments }] = await Promise.all([
     supabase.from('lesson_views').upsert(
       { lesson_id: lesson.id, user_id: user.id },
       { onConflict: 'lesson_id,user_id', ignoreDuplicates: true }
@@ -95,7 +95,10 @@ export default async function LessonPage({ params }: { params: { id: string } })
       .eq('cohort_id', cohortId || '')
       .order('created_at', { ascending: false }),
     supabase.from('admin_settings').select('google_review_url, facebook_page_url, facebook_follow_url, instagram_url, linkedin_url, youtube_url, tiktok_url, autotuesday_url').eq('id', 1).single(),
+    supabase.from('lesson_attachments').select('id, name, url, type').eq('lesson_id', lesson.id).order('order_num'),
   ])
+
+  const ATTACH_ICONS: Record<string, string> = { url: '🔗', file: '📄', image: '🖼', video: '🎬', audio: '🎵' }
 
   const social = adminSettings as Record<string, string | null> | null
   const recommendLinks = RECOMMEND_PLATFORMS_LIST.filter(p => social?.[p.key])
@@ -134,6 +137,27 @@ export default async function LessonPage({ params }: { params: { id: string } })
               הורד חומרי לימוד
             </a>
           )}
+        </div>
+      )}
+
+      {/* Multi-attachments */}
+      {attachments && attachments.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">📎 חומרים ומשאבים</h2>
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((a: any) => (
+              <a
+                key={a.id}
+                href={a.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 text-gray-800 px-3.5 py-2 rounded-lg text-sm font-medium transition"
+              >
+                <span className="text-base leading-none">{ATTACH_ICONS[a.type] || '📄'}</span>
+                <span>{a.name}</span>
+              </a>
+            ))}
+          </div>
         </div>
       )}
 
