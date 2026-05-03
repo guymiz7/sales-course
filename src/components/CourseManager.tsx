@@ -596,9 +596,6 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                           </div>
                         </div>
                       )}
-
-                      {/* Multi-attachments editor */}
-                      <LessonAttachmentsEditor lessonId={lesson.id} />
                     </div>
                   ) : (
                     <div>
@@ -624,6 +621,9 @@ export default function CourseManager({ courses }: { courses: Course[] }) {
                       )}
                     </div>
                   )}
+
+                  {/* Multi-attachments editor — always visible for admin, regardless of edit mode */}
+                  <LessonAttachmentsEditor lessonId={lesson.id} />
                 </div>
               ))}
             </div>

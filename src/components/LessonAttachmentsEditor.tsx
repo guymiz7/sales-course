@@ -19,6 +19,8 @@ const TYPE_OPTIONS: { value: LessonAttachment['type']; label: string; icon: stri
   { value: 'audio', label: 'סאונד', icon: '🎵' },
 ]
 
+const TYPE_ICONS: Record<string, string> = { url: '🔗', file: '📄', image: '🖼', video: '🎬', audio: '🎵' }
+
 function detectType(url: string, fileName?: string): LessonAttachment['type'] {
   const target = (fileName || url).toLowerCase()
   if (/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/.test(target)) return 'image'
@@ -31,11 +33,10 @@ function detectType(url: string, fileName?: string): LessonAttachment['type'] {
 export default function LessonAttachmentsEditor({ lessonId }: { lessonId: string }) {
   const supabase = createClient()
   const [items, setItems] = useState<LessonAttachment[]>([])
-  const [loading, setLoading] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newUrl, setNewUrl] = useState('')
-  const [newType, setNewType] = useState<LessonAttachment['type']>('url')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<{ name: string; url: string; type: LessonAttachment['type'] }>({ name: '', url: '', type: 'url' })
+  const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
@@ -56,25 +57,53 @@ export default function LessonAttachmentsEditor({ lessonId }: { lessonId: string
     const { error } = await supabase.storage.from('lesson-files').upload(path, file, { upsert: true })
     if (error) { setUploading(false); alert('שגיאה בהעלאה: ' + error.message); return }
     const { data } = supabase.storage.from('lesson-files').getPublicUrl(path)
-    setNewUrl(data.publicUrl)
-    setNewType(detectType(data.publicUrl, file.name))
-    if (!newName.trim()) setNewName(file.name.replace(/\.[^.]+$/, ''))
+    setDraft(d => ({
+      ...d,
+      url: data.publicUrl,
+      type: detectType(data.publicUrl, file.name),
+      name: d.name || file.name.replace(/\.[^.]+$/, ''),
+    }))
     setUploading(false)
   }
 
+  function resetDraft() {
+    setDraft({ name: '', url: '', type: 'url' })
+    setAdding(false)
+    setEditingId(null)
+  }
+
   async function addItem() {
-    if (!newName.trim() || !newUrl.trim()) return
-    setLoading(true)
+    if (!draft.name.trim() || !draft.url.trim()) return
+    setBusy(true)
     const nextOrder = items.length > 0 ? Math.max(...items.map(i => i.order_num)) + 1 : 0
     const { data, error } = await supabase
       .from('lesson_attachments')
-      .insert({ lesson_id: lessonId, name: newName.trim(), url: newUrl.trim(), type: newType, order_num: nextOrder })
+      .insert({ lesson_id: lessonId, name: draft.name.trim(), url: draft.url.trim(), type: draft.type, order_num: nextOrder })
       .select()
       .single()
-    setLoading(false)
+    setBusy(false)
     if (error) { alert('שגיאה: ' + error.message); return }
     if (data) setItems(prev => [...prev, data as any])
-    setNewName(''); setNewUrl(''); setNewType('url'); setAdding(false)
+    resetDraft()
+  }
+
+  function startEdit(item: LessonAttachment) {
+    setEditingId(item.id)
+    setAdding(false)
+    setDraft({ name: item.name, url: item.url, type: item.type })
+  }
+
+  async function saveEdit() {
+    if (!editingId || !draft.name.trim() || !draft.url.trim()) return
+    setBusy(true)
+    const { error } = await supabase
+      .from('lesson_attachments')
+      .update({ name: draft.name.trim(), url: draft.url.trim(), type: draft.type })
+      .eq('id', editingId)
+    setBusy(false)
+    if (error) { alert('שגיאה: ' + error.message); return }
+    setItems(prev => prev.map(i => i.id === editingId ? { ...i, name: draft.name.trim(), url: draft.url.trim(), type: draft.type } : i))
+    resetDraft()
   }
 
   async function deleteItem(id: string) {
@@ -96,13 +125,15 @@ export default function LessonAttachmentsEditor({ lessonId }: { lessonId: string
     ))
   }
 
+  const showForm = adding || editingId !== null
+
   return (
     <div className="border-t border-gray-100 mt-2 pt-2">
       <div className="flex items-center justify-between mb-1.5">
         <p className="text-xs font-semibold text-gray-700">📎 קבצים נוספים ({items.length})</p>
-        {!adding && (
+        {!showForm && (
           <button
-            onClick={() => setAdding(true)}
+            onClick={() => { resetDraft(); setAdding(true) }}
             className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-2 py-0.5 rounded transition"
           >
             + הוסף
@@ -112,34 +143,33 @@ export default function LessonAttachmentsEditor({ lessonId }: { lessonId: string
 
       {items.length > 0 && (
         <div className="space-y-1 mb-2">
-          {items.map((item, i) => {
-            const opt = TYPE_OPTIONS.find(o => o.value === item.type)
-            return (
-              <div key={item.id} className="flex items-center gap-1.5 bg-gray-50 rounded px-2 py-1.5 text-xs">
-                <span className="shrink-0">{opt?.icon || '📄'}</span>
-                <span className="flex-1 truncate text-gray-800">{item.name}</span>
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline shrink-0">פתח</a>
-                <button onClick={() => move(item.id, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-20" title="למעלה">↑</button>
-                <button onClick={() => move(item.id, 1)} disabled={i === items.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-20" title="למטה">↓</button>
-                <button onClick={() => deleteItem(item.id)} className="text-gray-400 hover:text-red-600" title="מחק">🗑</button>
-              </div>
-            )
-          })}
+          {items.map((item, i) => (
+            <div key={item.id} className="flex items-center gap-1.5 bg-gray-50 rounded px-2 py-1.5 text-xs">
+              <span className="shrink-0">{TYPE_ICONS[item.type] || '📄'}</span>
+              <span className="flex-1 truncate text-gray-800">{item.name}</span>
+              <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline shrink-0">פתח</a>
+              <button onClick={() => startEdit(item)} className="text-gray-400 hover:text-indigo-600" title="ערוך">✏️</button>
+              <button onClick={() => move(item.id, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-20" title="למעלה">↑</button>
+              <button onClick={() => move(item.id, 1)} disabled={i === items.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-20" title="למטה">↓</button>
+              <button onClick={() => deleteItem(item.id)} className="text-gray-400 hover:text-red-600" title="מחק">🗑</button>
+            </div>
+          ))}
         </div>
       )}
 
-      {adding && (
+      {showForm && (
         <div className="bg-indigo-50/50 border border-indigo-100 rounded p-2 space-y-1.5">
+          <p className="text-xs font-semibold text-indigo-700">{editingId ? 'עריכת קובץ' : 'הוספת קובץ חדש'}</p>
           <input
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
+            value={draft.name}
+            onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
             placeholder="שם להצגה (לדוגמא: מצגת השיעור)"
             className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
           />
           <div className="flex gap-1.5">
             <input
-              value={newUrl}
-              onChange={e => { setNewUrl(e.target.value); setNewType(detectType(e.target.value)) }}
+              value={draft.url}
+              onChange={e => setDraft(d => ({ ...d, url: e.target.value, type: detectType(e.target.value) }))}
               placeholder="הדבק קישור או העלה קובץ"
               className="flex-1 text-xs font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
@@ -152,26 +182,21 @@ export default function LessonAttachmentsEditor({ lessonId }: { lessonId: string
             {TYPE_OPTIONS.map(opt => (
               <button
                 key={opt.value}
-                onClick={() => setNewType(opt.value)}
-                className={`px-2 py-0.5 rounded text-xs transition ${newType === opt.value ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                onClick={() => setDraft(d => ({ ...d, type: opt.value }))}
+                className={`px-2 py-0.5 rounded text-xs transition ${draft.type === opt.value ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
               >
                 {opt.icon} {opt.label}
               </button>
             ))}
           </div>
           <div className="flex gap-1.5 justify-end">
+            <button onClick={resetDraft} className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5">ביטול</button>
             <button
-              onClick={() => { setAdding(false); setNewName(''); setNewUrl(''); setNewType('url') }}
-              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5"
-            >
-              ביטול
-            </button>
-            <button
-              onClick={addItem}
-              disabled={loading || !newName.trim() || !newUrl.trim()}
+              onClick={editingId ? saveEdit : addItem}
+              disabled={busy || !draft.name.trim() || !draft.url.trim()}
               className="text-xs bg-indigo-600 text-white px-3 py-0.5 rounded hover:bg-indigo-700 disabled:opacity-40"
             >
-              {loading ? 'מוסיף...' : 'הוסף'}
+              {busy ? 'שומר...' : (editingId ? 'שמור שינויים' : 'הוסף')}
             </button>
           </div>
         </div>
