@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -17,6 +18,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    if (code.trim().toUpperCase() !== 'GUYOCT') {
+      setError('קוד הרשמה שגוי. נא להזין את הקוד שקיבלת.')
+      setLoading(false)
+      return
+    }
 
     if (password.length < 6) {
       setError('הסיסמה חייבת להכיל לפחות 6 תווים')
@@ -109,6 +116,20 @@ export default function RegisterPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 placeholder="לפחות 6 תווים"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                קוד הרשמה
+              </label>
+              <input
+                type="text"
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                required
+                placeholder="הקוד שקיבלת"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
             </div>
