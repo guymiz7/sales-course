@@ -21,3 +21,6 @@
 .DS_Store
 *.pem
 npm-debug.log*
+
+# claude code local settings (personal, per-machine)
+.claude/settings.local.json
